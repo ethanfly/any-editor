@@ -1,0 +1,21 @@
+.editor-pane {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--pixel-panel);
+}
+
+.editor-pane .monaco-editor,
+.editor-pane .monaco-editor-background,
+.editor-pane .margin {
+  background: var(--pixel-panel) !important;
+}
+
+.editor-pane .monaco-editor {
+  border-radius: 0;
+}
+
+.editor-pane .monaco-scrollable-element > .scrollbar > .slider {
+  border-radius: 0 !important;
+  background: var(--pixel-line) !important;
+}

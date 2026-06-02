@@ -1,0 +1,113 @@
+.title-bar {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--pixel-panel);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--pixel-ink);
+  user-select: none;
+}
+
+.title-drag-region {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(80px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  cursor: default;
+}
+
+.title-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  background: var(--pixel-panel-deep);
+  color: var(--pixel-ink);
+  border: 1px solid var(--pixel-line-bright);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.title-name {
+  color: var(--pixel-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  white-space: nowrap;
+}
+
+.title-document {
+  min-width: 0;
+  color: var(--pixel-muted);
+  font-size: 11px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title-leds {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.title-leds span {
+  width: 6px;
+  height: 6px;
+  background: var(--pixel-blue);
+}
+
+.title-leds span:nth-child(2) {
+  background: var(--pixel-secondary);
+}
+
+.title-leds span:nth-child(3) {
+  background: var(--pixel-primary);
+}
+
+.window-controls {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.window-control {
+  width: 44px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--pixel-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  transition: background 80ms steps(1), color 80ms steps(1), transform 80ms steps(1);
+}
+
+.window-control:hover {
+  background: var(--pixel-panel-deep);
+  color: var(--pixel-ink);
+}
+
+.window-control:active {
+  transform: translate(1px, 1px);
+}
+
+.window-control.close:hover {
+  background: var(--pixel-danger);
+  color: var(--pixel-ink);
+}

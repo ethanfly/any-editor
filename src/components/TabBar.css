@@ -1,0 +1,125 @@
+.tab-bar {
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--pixel-panel-deep);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tab-bar-empty {
+  justify-content: center;
+}
+
+.tab-bar-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--pixel-muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: var(--pixel-panel);
+  color: var(--pixel-ink);
+  font-size: 10px;
+  letter-spacing: -1px;
+}
+
+.logo-text {
+  color: var(--pixel-muted);
+}
+
+.tab-list {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  flex: 1;
+  height: 100%;
+}
+
+.tab-list::-webkit-scrollbar {
+  height: 0;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 116px;
+  max-width: 220px;
+  padding: 0 10px;
+  cursor: pointer;
+  color: var(--pixel-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  position: relative;
+  transition: background 80ms steps(1), color 80ms steps(1);
+}
+
+.tab-item:hover {
+  background: var(--pixel-panel-soft);
+  color: var(--pixel-ink);
+}
+
+.tab-item.active {
+  background: var(--pixel-panel);
+  color: var(--pixel-ink);
+  font-weight: 900;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: var(--pixel-secondary);
+}
+
+.tab-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+  filter: saturate(0.65);
+}
+
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-modified {
+  color: var(--pixel-secondary);
+  font-weight: 900;
+}
+
+.tab-close {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 14px;
+  transition: background 80ms steps(1), color 80ms steps(1);
+}
+
+.tab-close:hover {
+  color: var(--pixel-ink);
+  background: var(--pixel-danger);
+}

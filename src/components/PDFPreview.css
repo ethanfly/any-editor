@@ -1,0 +1,107 @@
+.pdf-preview {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pixel-panel-deep);
+}
+
+.pdf-loading,
+.pdf-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: var(--pixel-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pdf-error {
+  color: var(--pixel-danger);
+}
+
+.pdf-spinner {
+  width: 36px;
+  height: 36px;
+  background:
+    linear-gradient(var(--pixel-secondary) 0 0) top left / 12px 12px no-repeat,
+    linear-gradient(var(--pixel-blue) 0 0) bottom right / 12px 12px no-repeat,
+    var(--pixel-panel);
+  animation: pixel-spin 0.8s steps(4, end) infinite;
+}
+
+@keyframes pixel-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  background: var(--pixel-panel);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.pdf-toolbar-btn {
+  min-width: 34px;
+  padding: 5px 9px;
+  background: var(--pixel-panel-soft);
+  border: 1px solid transparent;
+  color: var(--pixel-ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  transition: transform 80ms steps(1), background 80ms steps(1), border-color 80ms steps(1);
+}
+
+.pdf-toolbar-btn:hover:not(:disabled) {
+  background: var(--pixel-panel-deep);
+  border-color: var(--pixel-line-bright);
+}
+
+.pdf-toolbar-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+}
+
+.pdf-toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pdf-page-info,
+.pdf-scale-info {
+  min-width: 76px;
+  padding: 5px 8px;
+  background: var(--pixel-panel-deep);
+  color: var(--pixel-secondary);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.pdf-scale-info {
+  min-width: 52px;
+  color: var(--pixel-blue);
+}
+
+.pdf-toolbar-spacer {
+  flex: 1;
+}
+
+.pdf-canvas-container {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.pdf-canvas-container canvas {
+  background: #fffdf7;
+  border: 1px solid var(--border-light);
+  image-rendering: auto;
+}
