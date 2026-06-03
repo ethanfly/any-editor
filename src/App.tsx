@@ -8,7 +8,7 @@ import TitleBar from './components/TitleBar';
 import Toolbar from './components/Toolbar';
 import EditorPane from './components/EditorPane';
 import MarkdownPreview from './components/MarkdownPreview';
-import MilkdownEditor from './components/MilkdownEditor';
+import WysiwygEditor from './components/WysiwygEditor';
 import PDFPreview from './components/PDFPreview';
 import Outline from './components/Outline';
 import type { OpenTab, ViewMode } from './types';
@@ -369,9 +369,10 @@ const App: React.FC = () => {
             )}
 
             {activeTab && isMarkdown && viewMode === 'wysiwyg' && (
-              <MilkdownEditor
+              <WysiwygEditor
                 key={activeTab.path}
                 content={activeTab.content}
+                scrollToLine={currentLine}
                 onContentChange={(markdown) => {
                   setTabs((prev) =>
                     prev.map((tab) =>
