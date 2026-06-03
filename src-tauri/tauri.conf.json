@@ -112,7 +112,7 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": "embedBootstrapper",
+      "webviewInstallMode": { "type": "embedBootstrapper" },
       "nsis": {
         "installerHooks": "windows-context-menu.nsh",
         "languages": [
