@@ -298,7 +298,7 @@ function parseMarkdownToHtml(md: string): string {
     const hMatch = line.match(/^(#{1,6})\s+(.*)$/);
     if (hMatch) {
       result.push(
-        `<div id="heading-${headingIndex}" class="md-line" data-type="h${hMatch[1].length}">${parseInlineMarkdown(hMatch[2])}</div>`
+        `<div data-line="${i + 1}" class="md-line" data-type="h${hMatch[1].length}">${parseInlineMarkdown(hMatch[2])}</div>`
       );
       headingIndex += 1;
       i += 1;
@@ -524,17 +524,17 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
   useEffect(() => {
     if (scrollToLine && editorRef.current) {
       const editor = editorRef.current;
-      // Try heading ID first
-      const headingEl = editor.querySelector(`#heading-${scrollToLine - 1}`);
+      // Try heading by data-line first (exact line number match)
+      const headingEl = editor.querySelector(`[data-line="${scrollToLine}"]`);
       if (headingEl) {
-        headingEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        headingEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
       // Fallback: scroll to Nth child block
       const blocks = editor.children;
       const idx = Math.min(scrollToLine - 1, blocks.length - 1);
       if (idx >= 0 && blocks[idx]) {
-        blocks[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        blocks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
   }, [scrollToLine]);

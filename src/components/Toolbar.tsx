@@ -102,6 +102,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
             >
               预览
             </button>
+            <button
+              className={`view-mode-btn ${viewMode === 'split' ? 'active' : ''}`}
+              onClick={() => onViewModeChange('split')}
+              title="分屏模式（代码 + 预览）"
+            >
+              分屏
+            </button>
           </div>
         )}
         {hasOutline && (

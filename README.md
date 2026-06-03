@@ -1,27 +1,35 @@
-<p align="center"><img src="icon.svg" width="128" alt="Any Editor Icon" /></p>
+<p align="center">
+  <img src="icon.svg" width="128" alt="Any Editor Icon" />
+</p>
 
-# Any Editor — 万能文件编辑器
+<h1 align="center">Any Editor — 万能文件编辑器</h1>
 
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-orange)
-![Release](https://img.shields.io/github/v/release/any-editor/any-editor?color=%23f1953f)
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-orange" alt="Platform" />
+  <img src="https://img.shields.io/github/v/release/any-editor/any-editor?color=%23f1953f" alt="Release" />
+</p>
 
-跨平台桌面文件编辑器，支持 Markdown 所见即所得、代码高亮、PDF 预览等多种文件格式。
+<p align="center">跨平台桌面文件编辑器，支持 Markdown 所见即所得、代码高亮、PDF 预览等多种文件格式。</p>
+
+---
 
 ## 功能
 
-- **Markdown WYSIWYG** — Typora 风格所见即所得编辑，实时渲染
-- **代码编辑器** — 基于 Monaco Editor，支持语法高亮、代码折叠、多光标
-- **PDF 预览** — 内置 PDF.js，直接预览 PDF 文件
-- **文件类型图标** — 18+ 种文件类型 SVG 图标系统，一目了然
-- **标签页管理** — 多文件标签页切换，支持拖拽排序
-- **单实例运行** — 自动复用已打开的窗口，提升启动速度
-- **智能侧边栏** — 文件树自动显隐，最大化编辑区域
-- **同步滚动** — 编辑器与预览窗格双向同步滚动
+| 功能 | 说明 |
+|------|------|
+| Markdown WYSIWYG | Typora 风格所见即所得编辑，实时渲染 |
+| 代码编辑器 | 基于 Monaco Editor，语法高亮、代码折叠、多光标 |
+| PDF 预览 | 内置 PDF.js，直接预览 PDF 文件 |
+| 文件类型图标 | 18+ 种文件类型 SVG 图标系统 |
+| 标签页管理 | 多文件标签页切换，支持拖拽排序 |
+| 单实例运行 | 自动复用已打开的窗口，提升启动速度 |
+| 智能侧边栏 | 文件树自动显隐，最大化编辑区域 |
+| 同步滚动 | 编辑器与预览窗格双向同步滚动 |
 
 ## 技术栈
 
 | 层 | 技术 |
-|---|---|
+|------|------|
 | 前端 | React 19 + TypeScript + Vite |
 | 编辑器 | Monaco Editor / Markdown (marked + highlight.js) |
 | PDF | pdfjs-dist |
@@ -33,7 +41,7 @@
 从 [GitHub Releases](https://github.com/any-editor/any-editor/releases) 下载对应平台的安装包：
 
 | 平台 | 安装包 | 安装方式 |
-|---|---|---|
+|------|--------|----------|
 | Windows | `.msi` | 双击运行，按向导完成安装 |
 | macOS | `.dmg` | 打开后拖入「应用程序」文件夹 |
 | Linux | `.deb` | `sudo dpkg -i any-editor_*.deb` |
@@ -47,7 +55,7 @@
 - Node.js 22+
 - pnpm 9+
 - Rust 1.77+
-- 系统依赖（Linux）: `libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev`
+- 系统依赖（Linux）：`libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev`
 
 ### 启动开发模式
 
@@ -63,9 +71,12 @@ pnpm tauri build
 ```
 
 构建产物：
-- **Windows**: `src-tauri/target/release/bundle/msi/*.msi`
-- **macOS**: `src-tauri/target/release/bundle/dmg/*.dmg`
-- **Linux**: `src-tauri/target/release/bundle/deb/*.deb`
+
+| 平台 | 安装包路径 |
+|------|-----------|
+| Windows | `src-tauri/target/release/bundle/msi/*.msi` |
+| macOS | `src-tauri/target/release/bundle/dmg/*.dmg` |
+| Linux | `src-tauri/target/release/bundle/deb/*.deb` |
 
 ### 生成图标
 
@@ -93,7 +104,7 @@ push main → Bump Version → 创建版本 Tag → Build & Release
 ### Workflows
 
 | 文件 | 触发条件 | 功能 |
-|---|---|---|
+|------|----------|------|
 | `bump-version.yml` | push main / manual | 自动 bump 版本号并创建 tag |
 | `build.yml` | tag push / workflow_dispatch | 三平台编译 + 发布 Release |
 

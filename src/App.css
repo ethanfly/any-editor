@@ -152,6 +152,27 @@ button:focus-visible {
   background: var(--app-surface);
 }
 
+/* Split view: code + preview side by side */
+.split-view {
+  display: flex;
+  height: 100%;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.split-editor {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.split-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--app-line);
+}
+
 .welcome-screen {
   display: flex;
   align-items: center;

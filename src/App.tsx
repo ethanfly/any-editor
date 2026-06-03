@@ -30,6 +30,7 @@ const App: React.FC = () => {
   const [outlineHasContent, setOutlineHasContent] = useState(false);
   const [fileTreeVisible, setFileTreeVisible] = useState(false);
   const [currentLine, setCurrentLine] = useState(1);
+  const [scrollPercent, setScrollPercent] = useState(0);
   const [refreshKey] = useState(0);
   const [statusMessage, setStatusMessage] = useState('就绪');
   const didHandleInitialOpen = useRef(false);
@@ -397,6 +398,28 @@ const App: React.FC = () => {
 
             {activeTab && isMarkdown && viewMode === 'preview' && (
               <MarkdownPreview content={activeTab.content} />
+            )}
+
+            {activeTab && isMarkdown && viewMode === 'split' && (
+              <div className="split-view">
+                <div className="split-editor">
+                  <EditorPane
+                    content={activeTab.content}
+                    extension={activeTab.extension}
+                    onContentChange={handleContentChange}
+                    onCursorChange={setCurrentLine}
+                    scrollToLine={currentLine}
+                    onScroll={setScrollPercent}
+                  />
+                </div>
+                <div className="split-preview">
+                  <MarkdownPreview
+                    content={activeTab.content}
+                    scrollPercent={scrollPercent}
+                    onPreviewScroll={() => {}}
+                  />
+                </div>
+              </div>
             )}
           </div>
         </div>
