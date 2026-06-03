@@ -1,4 +1,4 @@
-/* ===== Any Editor - Clean Pixel Fresh Theme ===== */
+/* ===== Any Editor - Minimal Tech Theme ===== */
 
 * {
   margin: 0;
@@ -7,44 +7,48 @@
 }
 
 :root {
-  --pixel-bg: #f7f3ea;
-  --pixel-panel: #fffdf7;
-  --pixel-panel-soft: #f0eadc;
-  --pixel-panel-deep: #edf4ee;
-  --pixel-ink: #3f5048;
-  --pixel-muted: #7f8a80;
-  --pixel-primary: #d7bb91;
-  --pixel-primary-hot: #b99b73;
-  --pixel-secondary: #91b8a1;
-  --pixel-blue: #9cb7c4;
-  --pixel-danger: #d49a96;
-  --pixel-line: #d8cfc0;
-  --pixel-line-bright: #b8cbbc;
-  --pixel-shadow-color: #68766e;
-  --pixel-border-size: 1px;
-  --pixel-shadow: 0 2px 0 rgba(104, 118, 110, 0.12);
-  --pixel-shadow-sm: 0 1px 0 rgba(104, 118, 110, 0.14);
+  --app-bg: #f7f8fa;
+  --app-surface: #ffffff;
+  --app-surface-soft: #fbfcfd;
+  --app-surface-muted: #f2f5f4;
+  --app-text: #20242a;
+  --app-text-soft: #5e6673;
+  --app-text-muted: #9aa3ad;
+  --app-line: #e9edf1;
+  --app-line-strong: #dce3e8;
+  --app-orange: #ffb46b;
+  --app-orange-strong: #f1953f;
+  --app-orange-soft: #fff4e7;
+  --app-green: #9eddb6;
+  --app-green-strong: #55b981;
+  --app-green-soft: #eefaf3;
+  --app-blue: #8eb8d8;
+  --app-danger: #e68181;
+  --app-shadow: 0 18px 48px rgba(31, 41, 55, 0.08);
+  --app-shadow-sm: 0 8px 24px rgba(31, 41, 55, 0.06);
+  --app-radius: 16px;
+  --app-radius-sm: 10px;
 
-  --primary: var(--pixel-primary-hot);
-  --primary-light: var(--pixel-primary);
-  --primary-lighter: #ead8bd;
-  --primary-bg: var(--pixel-panel);
-  --primary-hover: var(--pixel-panel-soft);
-  --secondary: var(--pixel-secondary);
-  --secondary-light: #b7d6c5;
-  --secondary-lighter: #d9e8de;
-  --secondary-bg: #edf6ef;
-  --bg: var(--pixel-bg);
-  --surface: var(--pixel-panel);
-  --text: var(--pixel-ink);
-  --text-secondary: var(--pixel-muted);
-  --text-muted: #a39d91;
-  --border: var(--pixel-line);
-  --border-light: #e4dccf;
-  --radius: 0;
-  --radius-sm: 0;
-  --shadow: var(--pixel-shadow-sm);
-  --shadow-lg: var(--pixel-shadow);
+  --primary: var(--app-orange-strong);
+  --primary-light: var(--app-orange);
+  --primary-lighter: var(--app-orange-soft);
+  --primary-bg: var(--app-orange-soft);
+  --primary-hover: #ffe8cd;
+  --secondary: var(--app-green-strong);
+  --secondary-light: var(--app-green);
+  --secondary-lighter: var(--app-green-soft);
+  --secondary-bg: var(--app-green-soft);
+  --bg: var(--app-bg);
+  --surface: var(--app-surface);
+  --text: var(--app-text);
+  --text-secondary: var(--app-text-soft);
+  --text-muted: var(--app-text-muted);
+  --border: var(--app-line);
+  --border-light: var(--app-line);
+  --radius: var(--app-radius);
+  --radius-sm: var(--app-radius-sm);
+  --shadow: var(--app-shadow-sm);
+  --shadow-lg: var(--app-shadow);
 }
 
 html,
@@ -53,17 +57,19 @@ body,
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: 'Fusion Pixel 12px Monospaced', 'Zpix', 'Fixedsys', 'Terminal', 'MS Gothic', 'Microsoft YaHei', monospace;
+  font-family: 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei UI', 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 14px;
-  color: var(--text);
-  background: var(--bg);
-  image-rendering: pixelated;
-  -webkit-font-smoothing: none;
+  color: var(--app-text);
+  background: var(--app-bg);
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--pixel-bg);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255, 180, 107, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(158, 221, 182, 0.18), transparent 26%),
+    var(--app-bg);
 }
 
 button,
@@ -74,13 +80,13 @@ select {
 }
 
 button:focus-visible {
-  outline: var(--pixel-border-size) solid var(--pixel-blue);
+  outline: 2px solid rgba(241, 149, 63, 0.36);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--pixel-secondary);
-  color: var(--pixel-ink);
+  background: rgba(255, 180, 107, 0.36);
+  color: var(--app-text);
 }
 
 ::-webkit-scrollbar {
@@ -93,11 +99,12 @@ button:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--pixel-line);
+  background: #d4dbe2;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--pixel-secondary);
+  background: #bec8d1;
 }
 
 .app {
@@ -105,8 +112,8 @@ button:focus-visible {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: var(--pixel-bg);
-  color: var(--pixel-ink);
+  background: transparent;
+  color: var(--app-text);
 }
 
 .app-body {
@@ -114,11 +121,13 @@ button:focus-visible {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  padding: 10px;
+  gap: 10px;
 }
 
 .sidebar-left {
-  width: 260px;
-  min-width: 200px;
+  width: 272px;
+  min-width: 220px;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -127,9 +136,12 @@ button:focus-visible {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   min-width: 0;
-  background: var(--pixel-panel-deep);
+  overflow: hidden;
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-sm);
 }
 
 .editor-area {
@@ -137,7 +149,7 @@ button:focus-visible {
   min-height: 0;
   overflow: hidden;
   position: relative;
-  background: var(--pixel-panel-deep);
+  background: var(--app-surface);
 }
 
 .welcome-screen {
@@ -145,57 +157,58 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 28px;
+  padding: 32px;
   background:
-    radial-gradient(circle at 50% 30%, rgba(216, 185, 143, 0.16), transparent 38%),
-    var(--pixel-bg);
+    linear-gradient(135deg, rgba(255, 244, 231, 0.72), rgba(238, 250, 243, 0.72)),
+    var(--app-surface);
 }
 
 .welcome-content {
-  width: min(520px, 100%);
-  padding: 32px;
+  width: min(560px, 100%);
+  padding: 42px;
   text-align: center;
-  background: var(--pixel-panel);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--pixel-shadow);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(233, 237, 241, 0.9);
+  border-radius: 28px;
+  box-shadow: var(--app-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .welcome-logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 58px;
-  margin-bottom: 18px;
-  background: var(--pixel-panel-deep);
-  color: var(--pixel-ink);
-  border: 1px solid var(--pixel-line-bright);
+  width: 74px;
+  height: 74px;
+  margin-bottom: 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--app-orange), var(--app-green));
+  color: #ffffff;
   font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -2px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  box-shadow: 0 16px 34px rgba(241, 149, 63, 0.22);
 }
 
 .welcome-content h1 {
-  margin-bottom: 8px;
-  color: var(--pixel-ink);
-  font-size: 32px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+  margin-bottom: 10px;
+  color: var(--app-text);
+  font-size: 34px;
+  font-weight: 760;
+  letter-spacing: -0.8px;
 }
 
 .welcome-subtitle {
   margin-bottom: 12px;
-  color: var(--pixel-secondary);
+  color: var(--app-green-strong);
   font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 1px;
+  font-weight: 700;
 }
 
 .welcome-desc {
-  margin-bottom: 28px;
-  color: var(--pixel-muted);
-  font-size: 13px;
+  margin-bottom: 30px;
+  color: var(--app-text-soft);
+  font-size: 14px;
   line-height: 1.8;
 }
 
@@ -203,40 +216,42 @@ button:focus-visible {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
 .welcome-btn {
-  min-width: 146px;
-  padding: 10px 18px;
-  border: 1px solid var(--pixel-line);
-  background: var(--pixel-panel-soft);
-  color: var(--pixel-ink);
+  min-width: 148px;
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--app-surface-muted);
+  color: var(--app-text);
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
-  box-shadow: var(--pixel-shadow-sm);
-  transition: transform 80ms steps(1), background 80ms steps(1), border-color 80ms steps(1);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
 .welcome-btn.primary {
-  background: var(--pixel-secondary);
-  border-color: var(--pixel-secondary);
+  background: linear-gradient(135deg, var(--app-orange), var(--app-orange-strong));
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(241, 149, 63, 0.22);
 }
 
 .welcome-btn.secondary {
-  background: var(--pixel-blue);
-  border-color: var(--pixel-blue);
+  background: var(--app-green-soft);
+  border-color: rgba(85, 185, 129, 0.18);
+  color: var(--app-green-strong);
 }
 
 .welcome-btn:hover {
-  background: var(--pixel-primary);
-  border-color: var(--pixel-primary-hot);
+  transform: translateY(-1px);
+  box-shadow: var(--app-shadow-sm);
 }
 
 .welcome-btn:active {
-  transform: translate(1px, 1px);
+  transform: translateY(0);
   box-shadow: none;
 }
 
@@ -248,10 +263,11 @@ button:focus-visible {
 }
 
 .welcome-shortcuts span {
-  padding: 4px 7px;
-  color: var(--pixel-muted);
-  background: var(--pixel-panel-deep);
-  font-size: 10px;
+  padding: 5px 10px;
+  color: var(--app-text-muted);
+  background: var(--app-surface-muted);
+  border-radius: 999px;
+  font-size: 11px;
 }
 
 .split-view {
@@ -268,29 +284,29 @@ button:focus-visible {
 }
 
 .split-divider {
-  width: 4px;
-  background: var(--pixel-line);
+  width: 1px;
+  background: var(--app-line);
   cursor: col-resize;
   flex-shrink: 0;
 }
 
 .split-divider:hover {
-  background: var(--pixel-secondary);
+  background: var(--app-orange);
 }
 
 .status-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 24px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 16px;
   flex-shrink: 0;
-  background: var(--pixel-panel);
-  border-top: 1px solid var(--border-light);
-  color: var(--pixel-muted);
+  background: rgba(255, 255, 255, 0.82);
+  border-top: 1px solid var(--app-line);
+  color: var(--app-text-muted);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .status-message {
@@ -308,9 +324,9 @@ button:focus-visible {
 }
 
 .status-separator {
-  color: var(--pixel-line);
+  color: var(--app-line-strong);
 }
 
 .status-item {
-  color: var(--pixel-secondary);
+  color: var(--app-green-strong);
 }

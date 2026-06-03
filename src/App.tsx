@@ -282,13 +282,13 @@ const App: React.FC = () => {
                       className="welcome-btn primary"
                       onClick={handleOpenFolder}
                     >
-                      📂 打开文件夹
+                      打开文件夹
                     </button>
                     <button
                       className="welcome-btn secondary"
                       onClick={handleOpenFile}
                     >
-                      📄 打开文件
+                      打开文件
                     </button>
                   </div>
                   <div className="welcome-shortcuts">

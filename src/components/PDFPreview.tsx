@@ -119,7 +119,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ filePath }) => {
       )}
       {error && (
         <div className="pdf-error">
-          <span>❌</span>
+          <span className="pdf-error-mark">!</span>
           <p>{error}</p>
         </div>
       )}
@@ -148,14 +148,14 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ filePath }) => {
               className="pdf-toolbar-btn"
               onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
             >
-              🔍−
+              −
             </button>
             <span className="pdf-scale-info">{Math.round(scale * 100)}%</span>
             <button
               className="pdf-toolbar-btn"
               onClick={() => setScale((s) => Math.min(3, s + 0.2))}
             >
-              🔍+
+              +
             </button>
           </div>
           <div className="pdf-canvas-container" ref={containerRef} />

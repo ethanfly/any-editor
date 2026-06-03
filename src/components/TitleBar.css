@@ -1,12 +1,13 @@
 .title-bar {
   display: flex;
   align-items: stretch;
-  height: 36px;
+  height: 42px;
   flex-shrink: 0;
-  background: var(--pixel-panel);
-  border-bottom: 1px solid var(--border-light);
-  color: var(--pixel-ink);
+  background: rgba(255, 255, 255, 0.78);
+  border-bottom: 1px solid rgba(233, 237, 241, 0.86);
+  color: var(--app-text);
   user-select: none;
+  backdrop-filter: blur(18px);
 }
 
 .title-drag-region {
@@ -15,15 +16,15 @@
   display: grid;
   grid-template-columns: auto minmax(80px, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 0 10px;
+  gap: 14px;
+  padding: 0 14px;
   cursor: default;
 }
 
 .title-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -31,28 +32,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 20px;
-  background: var(--pixel-panel-deep);
-  color: var(--pixel-ink);
-  border: 1px solid var(--pixel-line-bright);
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--app-orange), var(--app-green));
+  color: #ffffff;
   font-size: 10px;
-  font-weight: 900;
-  letter-spacing: -1px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  box-shadow: 0 8px 18px rgba(241, 149, 63, 0.2);
 }
 
 .title-name {
-  color: var(--pixel-ink);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.2px;
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.4px;
   white-space: nowrap;
 }
 
 .title-document {
   min-width: 0;
-  color: var(--pixel-muted);
-  font-size: 11px;
+  color: var(--app-text-muted);
+  font-size: 12px;
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -62,52 +64,52 @@
 .title-leds {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .title-leds span {
   width: 6px;
   height: 6px;
-  background: var(--pixel-blue);
+  border-radius: 999px;
+  background: var(--app-blue);
+  opacity: 0.7;
 }
 
 .title-leds span:nth-child(2) {
-  background: var(--pixel-secondary);
+  background: var(--app-green);
 }
 
 .title-leds span:nth-child(3) {
-  background: var(--pixel-primary);
+  background: var(--app-orange);
 }
 
 .window-controls {
   display: flex;
   flex-shrink: 0;
+  padding-right: 6px;
 }
 
 .window-control {
-  width: 44px;
+  width: 42px;
   height: 100%;
   border: 0;
+  border-radius: 10px;
   background: transparent;
-  color: var(--pixel-muted);
+  color: var(--app-text-muted);
   cursor: pointer;
   font: inherit;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
-  transition: background 80ms steps(1), color 80ms steps(1), transform 80ms steps(1);
+  transition: background 140ms ease, color 140ms ease;
 }
 
 .window-control:hover {
-  background: var(--pixel-panel-deep);
-  color: var(--pixel-ink);
-}
-
-.window-control:active {
-  transform: translate(1px, 1px);
+  background: var(--app-surface-muted);
+  color: var(--app-text);
 }
 
 .window-control.close:hover {
-  background: var(--pixel-danger);
-  color: var(--pixel-ink);
+  background: rgba(230, 129, 129, 0.14);
+  color: #cf5f5f;
 }

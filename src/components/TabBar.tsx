@@ -36,9 +36,10 @@ const TabBar: React.FC<TabBarProps> = ({
             onClick={() => onTabClick(tab.path)}
             title={tab.path}
           >
-            <span className="tab-icon">
-              {tab.isBinary ? '📕' : '📄'}
-            </span>
+            <span
+              className={`tab-icon ${tab.isBinary ? 'binary' : 'text'}`}
+              aria-hidden="true"
+            />
             <span className="tab-name">
               {tab.name}
               {tab.isModified && <span className="tab-modified"> ●</span>}

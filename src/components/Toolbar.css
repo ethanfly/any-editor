@@ -2,19 +2,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 42px;
-  padding: 0 10px;
-  background: var(--pixel-panel);
-  border-bottom: 1px solid var(--border-light);
+  height: 50px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--app-line);
   flex-shrink: 0;
-  gap: 8px;
+  gap: 10px;
 }
 
 .toolbar-left,
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .toolbar-center {
@@ -26,43 +26,48 @@
 }
 
 .toolbar-file-info {
-  max-width: 420px;
-  padding: 4px 9px;
+  max-width: 460px;
+  padding: 6px 12px;
   overflow: hidden;
-  color: var(--pixel-muted);
-  background: var(--pixel-panel-deep);
-  font-size: 11px;
+  color: var(--app-text-soft);
+  background: var(--app-surface-muted);
+  border-radius: 999px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .modified-dot {
-  color: var(--pixel-secondary);
+  color: var(--app-green-strong);
   margin-right: 6px;
 }
 
 .toolbar-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 7px 10px;
-  background: var(--pixel-panel-soft);
+  gap: 6px;
+  padding: 8px 13px;
+  background: var(--app-surface-muted);
   border: 1px solid transparent;
-  color: var(--pixel-ink);
+  border-radius: 999px;
+  color: var(--app-text);
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   white-space: nowrap;
-  transition: transform 80ms steps(1), background 80ms steps(1), border-color 80ms steps(1), color 80ms steps(1);
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
 }
 
 .toolbar-btn:hover:not(.disabled) {
-  background: var(--pixel-panel-deep);
-  border-color: var(--pixel-line-bright);
+  transform: translateY(-1px);
+  background: #ffffff;
+  border-color: var(--app-line);
+  box-shadow: var(--app-shadow-sm);
 }
 
 .toolbar-btn:active:not(.disabled) {
-  transform: translate(1px, 1px);
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .toolbar-btn.disabled {
@@ -71,45 +76,49 @@
 }
 
 .toolbar-btn-primary {
-  background: var(--pixel-secondary);
-  color: var(--pixel-ink);
+  background: var(--app-orange-soft);
+  color: var(--app-orange-strong);
 }
 
 .toolbar-btn-primary:hover:not(.disabled) {
-  background: var(--pixel-primary);
+  background: linear-gradient(135deg, var(--app-orange), var(--app-orange-strong));
+  color: #ffffff;
 }
 
 .toolbar-divider {
   width: 1px;
   height: 20px;
-  background: var(--border-light);
+  background: var(--app-line);
   margin: 0 2px;
 }
 
 .toolbar-view-modes {
   display: flex;
-  gap: 2px;
-  padding: 2px;
-  background: var(--pixel-panel-deep);
+  gap: 3px;
+  padding: 3px;
+  background: var(--app-surface-muted);
+  border-radius: 999px;
 }
 
 .view-mode-btn {
-  padding: 5px 8px;
+  padding: 6px 10px;
   background: transparent;
   border: 0;
-  color: var(--pixel-muted);
+  border-radius: 999px;
+  color: var(--app-text-soft);
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 800;
-  transition: background 80ms steps(1), color 80ms steps(1);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
 .view-mode-btn:hover {
-  background: var(--pixel-panel-soft);
-  color: var(--pixel-ink);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--app-text);
 }
 
 .view-mode-btn.active {
-  background: var(--pixel-secondary);
-  color: var(--pixel-ink);
+  background: #ffffff;
+  color: var(--app-orange-strong);
+  box-shadow: 0 4px 16px rgba(31, 41, 55, 0.08);
 }

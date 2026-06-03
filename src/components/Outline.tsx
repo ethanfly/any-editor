@@ -99,7 +99,7 @@ const Outline: React.FC<OutlineProps> = ({
     <div className={`outline-panel ${isVisible ? 'visible' : 'collapsed'}`}>
       <div className="outline-header" onClick={onToggle}>
         <span className="outline-title">
-          {isVisible ? '📑 大纲' : '📑'}
+          {isVisible ? '大纲' : '纲'}
         </span>
         <span className="outline-toggle">{isVisible ? '◀' : '▶'}</span>
       </div>

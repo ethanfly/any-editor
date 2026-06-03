@@ -24,22 +24,15 @@ const FileTreeNode: React.FC<{
     }
   };
 
-  const getIcon = () => {
-    if (entry.is_dir) {
-      return isExpanded ? '📂' : '📁';
-    }
+  const getFileKind = () => {
+    if (entry.is_dir) return isExpanded ? 'folder-open' : 'folder';
+
     const ext = entry.extension;
-    const iconMap: Record<string, string> = {
-      md: '📝', markdown: '📝', txt: '📄', pdf: '📕',
-      json: '📋', html: '🌐', htm: '🌐', css: '🎨',
-      js: '📜', jsx: '📜', ts: '📘', tsx: '📘',
-      py: '🐍', rs: '🦀', go: '🔵', java: '☕',
-      yml: '⚙️', yaml: '⚙️', toml: '⚙️', xml: '📰',
-      svg: '🖼️', png: '🖼️', jpg: '🖼️', jpeg: '🖼️',
-      gif: '🖼️', ico: '🖼️', sh: '💻', bash: '💻',
-      log: '📊', env: '🔑', lock: '🔒', sql: '🗄️',
-    };
-    return iconMap[ext] || '📄';
+    if (['md', 'markdown', 'txt', 'log'].includes(ext)) return 'text';
+    if (['js', 'jsx', 'ts', 'tsx', 'json', 'html', 'css', 'rs', 'py', 'go', 'java'].includes(ext)) return 'code';
+    if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'].includes(ext)) return 'image';
+    if (ext === 'pdf') return 'pdf';
+    return 'file';
   };
 
   return (
@@ -50,7 +43,7 @@ const FileTreeNode: React.FC<{
         onClick={handleClick}
         title={entry.path}
       >
-        <span className="file-icon">{getIcon()}</span>
+        <span className={`file-icon ${getFileKind()}`} aria-hidden="true" />
         <span className="file-name">{entry.name}</span>
       </div>
       {entry.is_dir && isExpanded && entry.children && (
@@ -100,20 +93,20 @@ const FileTree: React.FC<FileTreeProps> = ({
   return (
     <div className="file-tree">
       <div className="file-tree-header">
-        <span className="file-tree-title">📁 文件浏览</span>
+        <span className="file-tree-title">文件浏览</span>
         <button
           className="icon-button"
           onClick={onRootChange}
           title="切换目录"
         >
-          📂
+          目录
         </button>
         <button
           className="icon-button"
           onClick={loadTree}
           title="刷新"
         >
-          🔄
+          刷新
         </button>
       </div>
       <div className="file-tree-body">

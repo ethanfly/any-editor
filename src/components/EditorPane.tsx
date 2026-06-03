@@ -68,38 +68,38 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         value={content}
         onChange={handleChange}
         onMount={handleEditorMount}
-        theme="any-editor-pixel"
+        theme="any-editor-tech"
         beforeMount={(monaco) => {
           // Define custom theme
-          monaco.editor.defineTheme('any-editor-pixel', {
+          monaco.editor.defineTheme('any-editor-tech', {
             base: 'vs',
             inherit: true,
             rules: [
-              { token: 'comment', foreground: '8c9388', fontStyle: 'italic' },
-              { token: 'keyword', foreground: '9a7d58', fontStyle: 'bold' },
-              { token: 'string', foreground: '6f967d' },
-              { token: 'number', foreground: '7d9bad' },
-              { token: 'type', foreground: 'aa7774', fontStyle: 'bold' },
-              { token: 'function', foreground: '4f6158' },
+              { token: 'comment', foreground: '94A3B8', fontStyle: 'italic' },
+              { token: 'keyword', foreground: 'F1953F', fontStyle: 'bold' },
+              { token: 'string', foreground: '55B981' },
+              { token: 'number', foreground: '4F92C7' },
+              { token: 'type', foreground: 'E48A4C', fontStyle: 'bold' },
+              { token: 'function', foreground: '1F2937' },
             ],
             colors: {
-              'editor.background': '#fffaf0',
-              'editor.foreground': '#425049',
-              'editor.lineHighlightBackground': '#e9f1e8',
-              'editor.selectionBackground': '#d8e7dc',
-              'editorCursor.foreground': '#8eaa9c',
-              'editorLineNumber.foreground': '#a39d91',
-              'editorLineNumber.activeForeground': '#8eaa9c',
-              'editorGutter.background': '#f1eadc',
-              'editorIndentGuide.background1': '#ded4c3',
-              'editorIndentGuide.activeBackground1': '#8eaa9c',
-              'minimap.background': '#f1eadc',
+              'editor.background': '#FFFFFF',
+              'editor.foreground': '#20242A',
+              'editor.lineHighlightBackground': '#FFF7ED',
+              'editor.selectionBackground': '#FFE5C2',
+              'editorCursor.foreground': '#F1953F',
+              'editorLineNumber.foreground': '#B8C0CC',
+              'editorLineNumber.activeForeground': '#F1953F',
+              'editorGutter.background': '#FBFCFD',
+              'editorIndentGuide.background1': '#E9EDF1',
+              'editorIndentGuide.activeBackground1': '#FFB46B',
+              'minimap.background': '#FBFCFD',
             },
           });
         }}
         options={{
           fontSize: 14,
-          fontFamily: "'Fusion Pixel 12px Monospaced', 'Zpix', 'Fixedsys', 'Cascadia Mono', 'Consolas', monospace",
+          fontFamily: "'Cascadia Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
           lineNumbers: 'on',
           minimap: { enabled: true, scale: 0.8 },
           scrollBeyondLastLine: false,
@@ -109,7 +109,7 @@ const EditorPane: React.FC<EditorPaneProps> = ({
           bracketPairColorization: { enabled: true },
           autoIndent: 'full',
           formatOnPaste: true,
-          smoothScrolling: false,
+          smoothScrolling: true,
           padding: { top: 14, bottom: 14 },
         }}
       />

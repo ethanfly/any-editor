@@ -1,11 +1,11 @@
 .tab-bar {
   display: flex;
   align-items: stretch;
-  height: 36px;
+  height: 42px;
   flex-shrink: 0;
   overflow: hidden;
-  background: var(--pixel-panel-deep);
-  border-bottom: 1px solid var(--border-light);
+  background: var(--app-surface-soft);
+  border-bottom: 1px solid var(--app-line);
 }
 
 .tab-bar-empty {
@@ -15,27 +15,28 @@
 .tab-bar-placeholder {
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: var(--pixel-muted);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 1.2px;
+  gap: 10px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .logo-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  background: var(--pixel-panel);
-  color: var(--pixel-ink);
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--app-orange), var(--app-green));
+  color: #ffffff;
   font-size: 10px;
-  letter-spacing: -1px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
 }
 
 .logo-text {
-  color: var(--pixel-muted);
+  color: var(--app-text-soft);
 }
 
 .tab-list {
@@ -44,6 +45,8 @@
   overflow-x: auto;
   flex: 1;
   height: 100%;
+  padding: 5px 8px 0;
+  gap: 6px;
 }
 
 .tab-list::-webkit-scrollbar {
@@ -53,45 +56,64 @@
 .tab-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 116px;
-  max-width: 220px;
-  padding: 0 10px;
+  gap: 7px;
+  min-width: 128px;
+  max-width: 230px;
+  padding: 0 11px;
   cursor: pointer;
-  color: var(--pixel-muted);
+  color: var(--app-text-soft);
   background: transparent;
+  border-radius: 12px 12px 0 0;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 650;
   white-space: nowrap;
   position: relative;
-  transition: background 80ms steps(1), color 80ms steps(1);
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
 .tab-item:hover {
-  background: var(--pixel-panel-soft);
-  color: var(--pixel-ink);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--app-text);
 }
 
 .tab-item.active {
-  background: var(--pixel-panel);
-  color: var(--pixel-ink);
-  font-weight: 900;
+  background: #ffffff;
+  color: var(--app-text);
+  font-weight: 760;
+  box-shadow: 0 -1px 0 var(--app-line), 0 10px 24px rgba(31, 41, 55, 0.04);
 }
 
 .tab-item.active::after {
   content: '';
   position: absolute;
-  left: 10px;
-  right: 10px;
+  left: 12px;
+  right: 12px;
   bottom: 0;
   height: 2px;
-  background: var(--pixel-secondary);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--app-orange), var(--app-green));
 }
 
 .tab-icon {
   flex-shrink: 0;
-  font-size: 13px;
-  filter: saturate(0.65);
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--app-orange-soft);
+  color: var(--app-orange-strong);
+  font-size: 0;
+}
+
+.tab-icon::before {
+  content: '';
+  width: 8px;
+  height: 10px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.76;
 }
 
 .tab-name {
@@ -101,25 +123,26 @@
 }
 
 .tab-modified {
-  color: var(--pixel-secondary);
-  font-weight: 900;
+  color: var(--app-green-strong);
+  font-weight: 800;
 }
 
 .tab-close {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   background: transparent;
   border: 0;
-  color: inherit;
+  border-radius: 999px;
+  color: var(--app-text-muted);
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 14px;
-  transition: background 80ms steps(1), color 80ms steps(1);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 18px;
+  transition: background 140ms ease, color 140ms ease;
 }
 
 .tab-close:hover {
-  color: var(--pixel-ink);
-  background: var(--pixel-danger);
+  color: #cf5f5f;
+  background: rgba(230, 129, 129, 0.14);
 }

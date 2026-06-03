@@ -29,10 +29,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <div className="toolbar">
       <div className="toolbar-left">
         <button className="toolbar-btn" onClick={onOpenFolder} title="打开文件夹 (Ctrl+O)">
-          📂 打开文件夹
+          打开文件夹
         </button>
         <button className="toolbar-btn" onClick={onOpenFile} title="打开文件 (Ctrl+Shift+O)">
-          📄 打开文件
+          打开文件
         </button>
         <div className="toolbar-divider" />
         <button
@@ -41,7 +41,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           disabled={!canSave}
           title="保存 (Ctrl+S)"
         >
-          💾 保存
+          保存
         </button>
       </div>
 
@@ -62,21 +62,21 @@ const Toolbar: React.FC<ToolbarProps> = ({
               onClick={() => onViewModeChange('code')}
               title="编辑模式"
             >
-              📝 编辑
+              编辑
             </button>
             <button
               className={`view-mode-btn ${viewMode === 'split' ? 'active' : ''}`}
               onClick={() => onViewModeChange('split')}
               title="分屏模式"
             >
-              👥 分屏
+              分屏
             </button>
             <button
               className={`view-mode-btn ${viewMode === 'preview' ? 'active' : ''}`}
               onClick={() => onViewModeChange('preview')}
               title="预览模式"
             >
-              👁 预览
+              预览
             </button>
           </div>
         )}
