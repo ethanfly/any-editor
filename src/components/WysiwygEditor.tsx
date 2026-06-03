@@ -352,6 +352,96 @@ function parseMarkdownToHtml(md: string): string {
       continue;
     }
 
+    // GFM Table detection (consecutive lines with | separators and at least one separator line)
+    if (line.includes('|') && line.trim().startsWith('|') || line.trim().endsWith('|')) {
+      // Collect table rows until we find a non-table line
+      const tableRows: string[] = [line];
+      let j = i + 1;
+      while (j < lines.length) {
+        const nextLine = lines[j];
+        if (nextLine.includes('|') && (nextLine.trim().startsWith('|') || nextLine.trim().endsWith('|'))) {
+          tableRows.push(nextLine);
+          j += 1;
+        } else {
+          break;
+        }
+      }
+
+      // Need at least 2 rows (header + separator + optional data)
+      if (tableRows.length >= 2) {
+        const hasSeparator = tableRows.some((row, idx) =>
+          idx > 0 && /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(row.trim())
+        );
+        if (hasSeparator) {
+          // Find the separator row index
+          let sepIdx = -1;
+          for (let k = 1; k < tableRows.length; k++) {
+            if (/^\|?[\s:-]+\|[\s|:-]+\|?$/.test(tableRows[k].trim())) {
+              sepIdx = k;
+              break;
+            }
+          }
+
+          // Parse table
+          const parseRow = (row: string): string[] => {
+            return row.split('|')
+              .map(c => c.trim())
+              .filter(c => c !== '' && !/^[-:]+$/.test(c));
+          };
+
+          // Determine alignment from separator row
+          const alignRow = sepIdx >= 0 ? tableRows[sepIdx] : '';
+          const alignments: string[] = [];
+          if (alignRow) {
+            alignRow.split('|').forEach(cell => {
+              const c = cell.trim();
+              if (c.startsWith(':') && c.endsWith(':')) alignments.push('center');
+              else if (c.endsWith(':')) alignments.push('right');
+              else alignments.push('left');
+            });
+          }
+
+          let html = '<table class="md-table"><thead><tr>';
+          // Header row(s): all rows before separator
+          for (let k = 0; k < sepIdx; k++) {
+            const cells = parseRow(tableRows[k]);
+            cells.forEach((cell, ci) => {
+              html += `<th style="text-align:${alignments[ci] || 'left'}">${parseInlineMarkdown(cell)}</th>`;
+            });
+          }
+          html += '</tr></thead><tbody>';
+
+          // Data rows: after separator
+          for (let k = sepIdx + 1; k < tableRows.length; k++) {
+            html += '<tr>';
+            const cells = parseRow(tableRows[k]);
+            cells.forEach((cell, ci) => {
+              html += `<td style="text-align:${alignments[ci] || 'left'}">${parseInlineMarkdown(cell)}</td>`;
+            });
+            html += '</tr>';
+          }
+          html += '</tbody></table>';
+          result.push(html);
+          i = j;
+          continue;
+        }
+      }
+      // Fall through to paragraph if not a valid table
+    }
+
+    // Standalone image
+    const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/);
+    if (imgMatch) {
+      const alt = imgMatch[1];
+      const src = imgMatch[2];
+      const title = imgMatch[3];
+      result.push(
+        `<p class="md-image-block"><img src="${src}" alt="${alt}"${title ? ` title="${title}"` : ''} class="md-image"></p>`
+      );
+      i += 1;
+      continue;
+    }
+
     // Empty line
     if (line.trim() === '') {
       result.push('<div class="md-line" data-type="p"><br></div>');

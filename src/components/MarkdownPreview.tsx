@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { marked } from 'marked';
+import hljs from 'highlight.js/lib/common';
 import DOMPurify from 'dompurify';
 import './MarkdownPreview.css';
 
@@ -8,6 +9,27 @@ interface MarkdownPreviewProps {
   scrollPercent?: number;
   onPreviewScroll?: (percent: number) => void;
 }
+
+// Configure marked with GFM (tables, task lists, strikethrough) + code highlight
+marked.setOptions({
+  gfm: true,
+  breaks: false,
+  highlight: function (code: string, lang: string): string {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(code, { language: lang }).value;
+      } catch {
+        // fall through to auto-detect
+      }
+    }
+    // auto-detect language
+    try {
+      return hljs.highlightAuto(code).value;
+    } catch {
+      return code;
+    }
+  },
+});
 
 const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   content,
@@ -18,7 +40,10 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
 
   const html = useMemo(() => {
     const rawHtml = marked.parse(content, { async: false }) as string;
-    return DOMPurify.sanitize(rawHtml);
+    return DOMPurify.sanitize(rawHtml, {
+      ADD_ATTR: ['target', 'rel'],
+      ADD_TAGS: ['iframe'], // allow sanitized iframes if needed
+    });
   }, [content]);
 
   // Sync scroll: when editor scrolls, preview follows
