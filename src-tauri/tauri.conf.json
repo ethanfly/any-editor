@@ -31,6 +31,29 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "fileAssociations": [
+      {
+        "ext": [
+          "txt", "md", "markdown", "mdown", "mkd",
+          "json", "html", "htm", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf",
+          "css", "scss", "less", "js", "jsx", "ts", "tsx", "vue", "svelte",
+          "py", "rb", "php", "java", "c", "cpp", "h", "hpp", "cs", "go",
+          "rs", "swift", "kt", "scala", "r", "sql", "graphql",
+          "sh", "bash", "zsh", "bat", "cmd", "ps1",
+          "log", "env", "gitignore", "editorconfig", "dockerfile",
+          "csv", "tsv", "diff", "patch", "lock"
+        ],
+        "name": "Any Editor 文档",
+        "description": "Any Editor 文件",
+        "role": "Editor"
+      },
+      {
+        "ext": ["pdf"],
+        "name": "PDF 文档",
+        "description": "PDF 文件",
+        "role": "Viewer"
+      }
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
