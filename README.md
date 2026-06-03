@@ -2,6 +2,8 @@
 
 跨平台桌面文件编辑器，支持 Markdown 所见即所得、代码高亮、PDF 预览等多种文件格式。
 
+<p align="center"><img src="icon.svg" width="128" alt="Any Editor Icon" /></p>
+
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-orange)
 ![Release](https://img.shields.io/github/v/release/any-editor/any-editor?color=%23f1953f)
 
