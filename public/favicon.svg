@@ -1,57 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <defs>
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f8a85b"/>
-      <stop offset="40%" stop-color="#f1953f"/>
-      <stop offset="100%" stop-color="#55b981"/>
-    </linearGradient>
-    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#f0f4f0"/>
-    </linearGradient>
-  </defs>
+  <!-- Background circle - solid orange -->
+  <circle cx="64" cy="64" r="58" fill="#f1953f"/>
 
-  <!-- Background circle -->
-  <circle cx="64" cy="64" r="58" fill="url(#bgGrad)"/>
-  <circle cx="64" cy="64" r="55" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
-
-  <!-- Chameleon body - curled tail -->
-  <g transform="translate(64,64) scale(1.05)">
-    <!-- Tail curl -->
-    <path d="M -28 15 Q -38 0 -34 -14 Q -28 -28 -14 -28 Q -2 -28 4 -16 Q 8 -6 4 4"
-          fill="none" stroke="white" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+  <!-- Chameleon - green -->
+  <g transform="translate(64,64)">
+    <!-- Curled tail -->
+    <path d="M -26 14 Q -38 -2 -32 -18 Q -22 -34 -8 -30 Q 6 -24 8 -8 Q 10 4 4 12"
+          fill="none" stroke="#55b981" stroke-width="8" stroke-linecap="round"/>
 
     <!-- Body -->
-    <ellipse cx="-6" cy="8" rx="20" ry="14" fill="white" opacity="0.92" transform="rotate(-10,-6,8)"/>
+    <ellipse cx="-6" cy="8" rx="20" ry="13" fill="#55b981" transform="rotate(-8,-6,8)"/>
 
-    <!-- Back spikes -->
-    <path d="M -18 -2 L -16 -8 L -12 -4 L -8 -10 L -4 -4 L 2 -8 L 6 -2"
-          fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+    <!-- Back crest/spikes -->
+    <path d="M -18 -1 L -14 -9 L -9 -5 L -4 -11 L 1 -6 L 6 -9 L 9 -4"
+          fill="none" stroke="#3da06a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 
     <!-- Head -->
-    <ellipse cx="16" cy="2" rx="11" ry="9" fill="white" opacity="0.95" transform="rotate(-5,16,2)"/>
+    <ellipse cx="16" cy="1" rx="12" ry="10" fill="#55b981" transform="rotate(-4,16,1)"/>
 
-    <!-- Helmet/crest -->
-    <path d="M 12 -8 Q 18 -18 22 -12 Q 24 -8 20 -6"
-          fill="white" opacity="0.7"/>
+    <!-- Head crest -->
+    <path d="M 10 -8 Q 15 -20 22 -14 Q 25 -10 20 -7"
+          fill="#3da06a"/>
 
-    <!-- Eye -->
-    <circle cx="20" cy="1" r="5" fill="#f1953f" opacity="0.9"/>
-    <circle cx="21" cy="0" r="2.5" fill="#20242a"/>
-    <circle cx="21.8" cy="-0.8" r="0.9" fill="white"/>
+    <!-- Eye - orange -->
+    <circle cx="21" cy="0" r="5.5" fill="white"/>
+    <circle cx="22" cy="-0.5" r="4.5" fill="#f1953f"/>
+    <circle cx="23" cy="-1" r="2.5" fill="#20242a"/>
+    <circle cx="24" cy="-1.8" r="1" fill="white"/>
 
-    <!-- Mouth line -->
-    <path d="M 24 5 Q 26 6 25 7" fill="none" stroke="#20242a" stroke-width="1.2" stroke-linecap="round" opacity="0.3"/>
+    <!-- Mouth -->
+    <path d="M 26 5 Q 28 6 27 7.5" fill="none" stroke="#3da06a" stroke-width="1.5" stroke-linecap="round"/>
 
     <!-- Front legs -->
-    <path d="M -4 18 L -8 28 L -12 30" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-    <path d="M 6 18 L 4 28 L 0 30" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+    <path d="M -2 18 L -6 28 L -10 31" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 8 17 L 6 28 L 2 31" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 
     <!-- Back legs -->
-    <path d="M -18 16 L -22 26 L -26 28" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
-    <path d="M -10 18 L -12 28 L -16 30" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+    <path d="M -18 16 L -22 26 L -26 29" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -10 17 L -12 28 L -16 31" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- Tongue hint -->
-    <path d="M 25 7.5 Q 28 8 29 7" fill="none" stroke="#f1953f" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+    <!-- Tongue -->
+    <path d="M 27 6 Q 31 7 30 4" fill="none" stroke="#f1953f" stroke-width="2" stroke-linecap="round"/>
   </g>
+
+  <!-- Subtle inner ring -->
+  <circle cx="64" cy="64" r="55" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
 </svg>
