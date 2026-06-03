@@ -4,6 +4,16 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 0.1.9)'
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -26,6 +36,29 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "value=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            TAG="${{ github.ref_name }}"
+            echo "value=${TAG#v}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Set version in config
+        run: |
+          node -e "
+            const fs=require('fs');
+            const c=JSON.parse(fs.readFileSync('./src-tauri/tauri.conf.json','utf8'));
+            c.version='${{ steps.version.outputs.value }}';
+            fs.writeFileSync('./src-tauri/tauri.conf.json',JSON.stringify(c,null,2)+'\n');
+            let t=fs.readFileSync('./src-tauri/Cargo.toml','utf8');
+            t=t.replace(/^version = \".*\"/m,'version = \"${{ steps.version.outputs.value }}\"');
+            fs.writeFileSync('./src-tauri/Cargo.toml',t);
+          "
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -82,15 +115,26 @@ jobs:
         with:
           path: artifacts
 
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "value=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "value=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
       - name: Display structure
         run: ls -R artifacts/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Any Editor ${{ github.ref_name }}"
+          tag_name: ${{ steps.version.outputs.value }}
+          name: "Any Editor ${{ steps.version.outputs.value }}"
           body: |
-            ## Any Editor ${{ github.ref_name }}
+            ## Any Editor ${{ steps.version.outputs.value }}
 
             ### 功能
             - Typora 风格 Markdown 所见即所得编辑器
@@ -98,7 +142,7 @@ jobs:
             - 单实例运行 + 标签页文件打开
             - 智能侧边栏自动显隐
             - 编辑器与预览同步滚动
-            - 全新应用图标设计
+            - 暖橙主题应用图标
 
             ### 安装
             - **Windows**: `.msi` 安装包

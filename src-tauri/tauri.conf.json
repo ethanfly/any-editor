@@ -39,7 +39,9 @@
     ],
     "windows": {
       "nsis": {
-        "installerHooks": "windows-context-menu.nsh"
+        "installerHooks": "windows-context-menu.nsh",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": true
       }
     },
     "android": {

@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   bump:
@@ -58,3 +59,9 @@ jobs:
           git commit -m "chore: bump to v${NEW} [skip ci]"
           git tag -a "v${NEW}" -m "v${NEW}"
           git push origin main --tags
+
+      - name: Trigger build workflow
+        run: |
+          gh workflow run build.yml --ref main -f version="${{ steps.do-bump.outputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

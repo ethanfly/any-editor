@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Warm orange gradient background — matching app theme primary #f1953f -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f1953f"/>
+      <stop offset="100%" stop-color="#d06e20"/>
+    </linearGradient>
+    <linearGradient id="docShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5f6fa"/>
+    </linearGradient>
+  </defs>
+
+  <!--
+    Layout rules:
+    - viewBox 0 0 1024 1024, the canonical desktop app icon canvas.
+    - Visible artwork lives inside a 96% safe area: 32..992 on each axis.
+    - The OS adds its own ~10% rounded mask on top — never let any
+      element reach the canvas edge.
+    - Document: centered, 208..816 horizontally, 160..864 vertically.
+    - # mark: bottom-right, OVERLAPPING the document by ~120px, with its
+      rightmost stroke ending at x=952 (72px clear of the canvas edge)
+      and its bottommost stroke ending at y=956 (68px clear). This gives
+      the OS mask plenty of room to round its corners without ever
+      biting into the symbol.
+  -->
+
+  <!-- Background. rx=180 keeps the silhouette inside the OS round-corner
+       budget — most desktop shells squircle 10-20% of the side, and 180
+       on a 1024 side is ~17%, so we sit in the middle of that range. -->
+  <rect x="0" y="0" width="1024" height="1024" rx="180" ry="180" fill="url(#bg)"/>
+
+  <!-- White document with folded top-right corner. -->
+  <g>
+    <rect x="208" y="160" width="608" height="704" rx="36" ry="36" fill="url(#docShade)"/>
+    <!-- Folded corner: soft warm tones to blend with the orange bg -->
+    <path d="M 752 160 L 816 160 L 816 224 Z" fill="#d4c0a8"/>
+    <path d="M 752 160 L 752 224 L 816 224 Z" fill="#e8dcc8"/>
+  </g>
+
+  <!-- Three soft warm-grey text lines on the document. Indented, varying widths. -->
+  <g fill="#d0c8bc">
+    <rect x="266" y="370" width="332" height="30" rx="15"/>
+    <rect x="266" y="438" width="392" height="30" rx="15"/>
+    <rect x="266" y="506" width="252" height="30" rx="15"/>
+  </g>
+
+  <!--
+    # mark: soft green, drawn as four overlapping rounded rectangles
+    (two verticals, two horizontals). The group is translated so the whole
+    symbol sits in the bottom-right, partly over the document.
+  -->
+  <g fill="#55b981" transform="translate(672, 600)">
+    <!-- Two vertical bars -->
+    <rect x="0"  y="0"  width="56" height="320" rx="18"/>
+    <rect x="160" y="0" width="56" height="320" rx="18"/>
+    <!-- Two horizontal bars -->
+    <rect x="-32" y="64"  width="280" height="56" rx="18"/>
+    <rect x="-32" y="208" width="280" height="56" rx="18"/>
+  </g>
+</svg>
