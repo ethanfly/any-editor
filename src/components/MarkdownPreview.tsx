@@ -10,24 +10,16 @@ interface MarkdownPreviewProps {
   onPreviewScroll?: (percent: number) => void;
 }
 
-// Configure marked with GFM (tables, task lists, strikethrough) + code highlight
-marked.setOptions({
+// Configure marked: GFM (tables, task lists) + syntax highlighting via custom renderer
+marked.use({
   gfm: true,
   breaks: false,
-  highlight: function (code: string, lang: string): string {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(code, { language: lang }).value;
-      } catch {
-        // fall through to auto-detect
-      }
-    }
-    // auto-detect language
-    try {
-      return hljs.highlightAuto(code).value;
-    } catch {
-      return code;
-    }
+  renderer: {
+    code({ text, lang }: { text: string; lang?: string }) {
+      const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+      const highlighted = hljs.highlight(text, { language }).value;
+      return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>\n`;
+    },
   },
 });
 
@@ -42,11 +34,9 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
     const rawHtml = marked.parse(content, { async: false }) as string;
     return DOMPurify.sanitize(rawHtml, {
       ADD_ATTR: ['target', 'rel'],
-      ADD_TAGS: ['iframe'], // allow sanitized iframes if needed
     });
   }, [content]);
 
-  // Sync scroll: when editor scrolls, preview follows
   useEffect(() => {
     if (scrollPercent !== undefined && previewRef.current) {
       const el = previewRef.current;
@@ -55,7 +45,6 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
     }
   }, [scrollPercent]);
 
-  // Report scroll back when user scrolls the preview
   const handlePreviewScroll = () => {
     if (onPreviewScroll && previewRef.current) {
       const el = previewRef.current;
