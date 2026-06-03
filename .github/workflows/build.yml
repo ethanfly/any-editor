@@ -90,7 +90,7 @@ jobs:
 
       - name: Build (Windows)
         if: runner.os == 'Windows'
-        run: pnpm tauri build --bundles msi
+        run: pnpm tauri build --bundles nsis
 
       - name: Build (macOS)
         if: runner.os == 'macOS'
@@ -146,7 +146,7 @@ jobs:
             - 暖橙主题应用图标
 
             ### 安装
-            - **Windows**: `.msi` 安装包
+            - **Windows**: `.exe` 安装包
             - **macOS**: `.dmg` 镜像
             - **Linux**: `.deb` 包
           draft: false
