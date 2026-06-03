@@ -558,7 +558,7 @@ function htmlToMarkdown(html: string): string {
     if (tag === 'table' && className.includes('md-table')) {
       const rows: string[] = [];
       const thead = el.querySelector('thead');
-      const tbody = el.querySelector('tbody');
+      
       const allRows = el.querySelectorAll('tr');
 
       // Collect alignment info from header cells
