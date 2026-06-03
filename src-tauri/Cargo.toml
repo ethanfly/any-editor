@@ -1,6 +1,6 @@
 [package]
 name = "any-editor"
-version = "0.1.27"
+version = "0.1.28"
 description = "A universal file editor - edit any text file with ease"
 authors = ["AnyEditor"]
 license = "MIT"
