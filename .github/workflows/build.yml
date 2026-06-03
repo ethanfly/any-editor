@@ -104,13 +104,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-${{ matrix.target }}
-          path: src-tauri/target/${{ matrix.target }}/release/bundle/
+          path: src-tauri/target/release/bundle/
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
@@ -127,6 +129,25 @@ jobs:
           fi
         shell: bash
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          CURRENT_TAG="${{ steps.version.outputs.value }}"
+          PREV_TAG=$(git tag --sort=-v:refname | grep "^v" | grep -v "^${CURRENT_TAG}$" | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s" --no-merges "${CURRENT_TAG}")
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" --no-merges "${PREV_TAG}..${CURRENT_TAG}")
+          fi
+          CHANGELOG=$(echo "$CHANGELOG" | grep -v "chore: bump to" || true)
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="_（无用户可见变更）_"
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        shell: bash
+
       - name: Display structure
         run: ls -R artifacts/ || echo "No artifacts found"
 
@@ -138,13 +159,8 @@ jobs:
           body: |
             ## Any Editor ${{ steps.version.outputs.value }}
 
-            ### 功能
-            - Typora 风格 Markdown 所见即所得编辑器
-            - 文件类型 SVG 图标系统 (18+ 文件类型)
-            - 单实例运行 + 标签页文件打开
-            - 智能侧边栏自动显隐
-            - 编辑器与预览同步滚动
-            - 暖橙主题应用图标
+            ### 更新内容
+            ${{ steps.changelog.outputs.changelog }}
 
             ### 安装
             - **Windows**: `.exe` 安装包
