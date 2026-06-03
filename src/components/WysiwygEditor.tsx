@@ -263,7 +263,12 @@ function createLineElement(blockType: BlockType, content: string = ''): HTMLElem
 function parseMarkdownToHtml(md: string): string {
   if (!md) return '<div class="md-line" data-type="p"><br></div>';
 
-  const lines = md.split('\n');
+  // Normalize CRLF / CR → LF so Windows-style files parse identically to
+  // Unix-style files. Trailing \r characters would otherwise survive into
+  // inline markdown output and cause rendering artefacts inside the
+  // contentEditable div.
+  const normalized = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalized.split('\n');
   const result: string[] = [];
   let inCodeBlock = false;
   let codeLanguage = '';
