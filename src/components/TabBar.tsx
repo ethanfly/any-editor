@@ -19,7 +19,7 @@ const TabBar: React.FC<TabBarProps> = ({
     return (
       <div className="tab-bar tab-bar-empty">
         <div className="tab-bar-placeholder">
-          <span className="logo-icon">AE</span>
+          <img className="logo-icon" src="/favicon.svg" alt="Any Editor" />
           <span className="logo-text">Any Editor</span>
         </div>
       </div>

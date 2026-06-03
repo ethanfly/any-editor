@@ -1,20 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect x="6" y="6" width="116" height="116" rx="26" fill="#f1953f"/>
+  <defs>
+    <!-- High-saturation orange gradient background -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="50%" stop-color="#FF5500"/>
+      <stop offset="100%" stop-color="#FF3D00"/>
+    </linearGradient>
+    <!-- Subtle inner highlight -->
+    <linearGradient id="bg-shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
 
-  <!-- Letter A - built from clean geometry -->
-  <g fill="white">
-    <!-- Left leg -->
-    <path d="M34 104 L56 28 L64 28 L44 104 Z"/>
-    <!-- Right leg -->
-    <path d="M84 104 L64 28 L72 28 L94 104 Z"/>
-    <!-- Crossbar -->
-    <rect x="44" y="70" width="40" height="7" rx="3.5"/>
+  <!-- Background rounded rect -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg-grad)"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg-shine)"/>
+
+  <!-- AE Monogram - bold geometric white lettering -->
+  <g fill="#FFFFFF">
+    <!-- A: Left leg (thick angled stroke) -->
+    <polygon points="12,98 42,22 51,22 24,98"/>
+    <!-- A: Right leg (shared with E's vertical stem) -->
+    <polygon points="49,22 57,22 66,98 54,98"/>
+    <!-- A: Crossbar -->
+    <rect x="26" y="58" width="27" height="7" rx="3.5"/>
+
+    <!-- E: Top horizontal bar -->
+    <rect x="53" y="22" width="36" height="7" rx="3.5"/>
+    <!-- E: Middle horizontal bar (aligned with A's crossbar) -->
+    <rect x="47" y="58" width="36" height="7" rx="3.5"/>
+    <!-- E: Bottom horizontal bar -->
+    <rect x="53" y="91" width="36" height="7" rx="3.5"/>
   </g>
 
-  <!-- Green accent: inner triangle cutout -->
-  <path d="M59 42 L69 42 L64 52 Z" fill="#55b981"/>
+  <!-- Text cursor (blinking I-beam) - editing concept -->
+  <rect x="100" y="22" width="3" height="76" rx="1.5" fill="#00E676">
+    <animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
 
-  <!-- Green edit cursor underline -->
-  <rect x="48" y="100" width="8" height="5" rx="2.5" fill="#55b981"/>
-  <rect x="56" y="100" width="28" height="5" rx="2.5" fill="#55b981"/>
+  <!-- Text selection highlight - editing concept -->
+  <rect x="53" y="38" width="24" height="22" rx="3" fill="#00E676" opacity="0.2"/>
+
+  <!-- Tiny bracket hint for code editing -->
+  <path d="M100,98 L95,102 L100,106" fill="none" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
 </svg>

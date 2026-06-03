@@ -22,17 +22,11 @@
 }
 
 .logo-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 24px;
   height: 24px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--app-orange), var(--app-green));
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
+  object-fit: contain;
 }
 
 .logo-text {
