@@ -72,7 +72,9 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
         role="presentation"
       >
         <div className="title-brand" aria-label="Any Editor">
-          <span className="title-logo">AE</span>
+          <span className="title-logo">
+            <img src="/favicon.svg" alt="" />
+          </span>
           <span className="title-name">ANY EDITOR</span>
         </div>
         <div className="title-document">{windowTitle}</div>

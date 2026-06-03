@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use tauri::Emitter;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileEntry {
@@ -159,6 +160,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // Second instance launched — forward args to frontend
+            if let Err(e) = app.emit("second-instance-open", argv) {
+                eprintln!("Failed to emit second-instance-open event: {}", e);
+            }
+        }))
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

@@ -13,8 +13,8 @@
 .file-tree-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 13px 14px;
+  gap: 6px;
+  padding: 10px 10px 10px 12px;
   flex-shrink: 0;
   background: #ffffff;
   border-bottom: 1px solid var(--app-line);
@@ -25,29 +25,58 @@
 
 .file-tree-title {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--app-text-soft);
+  letter-spacing: 0.2px;
 }
 
 .icon-button {
-  width: 30px;
-  height: 30px;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: unset;
+  height: 26px;
+  padding: 0 10px;
   background: var(--app-surface-muted);
-  border: 0;
-  border-radius: 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--app-text-soft);
   cursor: pointer;
-  font-size: 13px;
-  transition: transform 140ms ease, background 140ms ease, color 140ms ease;
+  font-size: 11px;
+  font-weight: 660;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.icon-button svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 140ms ease;
 }
 
 .icon-button:hover {
   transform: translateY(-1px);
-  background: var(--app-orange-soft);
+  background: #ffffff;
+  border-color: rgba(241, 149, 63, 0.22);
   color: var(--app-orange-strong);
+  box-shadow: 0 8px 18px rgba(31, 41, 55, 0.06);
+}
+
+.icon-button:hover svg {
+  opacity: 1;
+}
+
+.icon-button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .file-tree-body {
@@ -90,24 +119,90 @@
 
 .file-icon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  min-width: 30px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 5px;
+  padding: 0 7px;
   border-radius: 7px;
   background: var(--app-orange-soft);
   color: var(--app-orange-strong);
-  font-size: 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
 }
 
-.file-icon::before {
-  content: '';
-  width: 9px;
-  height: 11px;
-  border-radius: 2px;
-  background: currentColor;
+.file-icon svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
   opacity: 0.75;
+}
+
+.file-icon-label {
+  line-height: 1;
+}
+
+.file-icon.folder,
+.file-icon.folder-open {
+  background: var(--app-green-soft);
+  color: var(--app-green-strong);
+}
+
+.file-icon.markdown,
+.file-icon.text {
+  background: #eef2ff;
+  color: #6476d3;
+}
+
+.file-icon.script,
+.file-icon.typescript {
+  background: #eef6ff;
+  color: #3c8cc9;
+}
+
+.file-icon.style,
+.file-icon.web {
+  background: #fff4e7;
+  color: var(--app-orange-strong);
+}
+
+.file-icon.json,
+.file-icon.config {
+  background: #f2f5f4;
+  color: #667085;
+}
+
+.file-icon.image {
+  background: #f4eefd;
+  color: #8b5fc7;
+}
+
+.file-icon.pdf {
+  background: #fff0f0;
+  color: #d45a5a;
+}
+
+.file-icon.python,
+.file-icon.go,
+.file-icon.rust,
+.file-icon.java {
+  background: #eefaf3;
+  color: var(--app-green-strong);
+}
+
+.file-icon.secret,
+.file-icon.lock {
+  background: #fff7db;
+  color: #b88718;
+}
+
+.file-icon.database,
+.file-icon.archive,
+.file-icon.shell {
+  background: #edf4f8;
+  color: #54718b;
 }
 
 .file-name {

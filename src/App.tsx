@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import FileTree from './components/FileTree';
 import TabBar from './components/TabBar';
 import TitleBar from './components/TitleBar';
 import Toolbar from './components/Toolbar';
 import EditorPane from './components/EditorPane';
 import MarkdownPreview from './components/MarkdownPreview';
+import MilkdownEditor from './components/MilkdownEditor';
 import PDFPreview from './components/PDFPreview';
 import Outline from './components/Outline';
 import type { OpenTab, ViewMode } from './types';
@@ -24,11 +26,25 @@ const App: React.FC = () => {
   const [tabs, setTabs] = useState<OpenTab[]>([]);
   const [activeTabPath, setActiveTabPath] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('code');
-  const [outlineVisible, setOutlineVisible] = useState(true);
+  const [outlineVisible, setOutlineVisible] = useState(false);
+  const [outlineHasContent, setOutlineHasContent] = useState(false);
+  const [fileTreeVisible, setFileTreeVisible] = useState(false);
   const [currentLine, setCurrentLine] = useState(1);
   const [refreshKey] = useState(0);
   const [statusMessage, setStatusMessage] = useState('就绪');
   const didHandleInitialOpen = useRef(false);
+  const outlineVisibleRef = useRef(outlineVisible);
+  outlineVisibleRef.current = outlineVisible;
+
+  const handleHasContent = useCallback((hasContent: boolean) => {
+    setOutlineHasContent(hasContent);
+    if (hasContent && !outlineVisibleRef.current) {
+      setOutlineVisible(true);
+    }
+    if (!hasContent) {
+      setOutlineVisible(false);
+    }
+  }, []);
 
   const activeTab = tabs.find((t) => t.path === activeTabPath) || null;
   const isMarkdown = activeTab
@@ -66,6 +82,7 @@ const App: React.FC = () => {
       });
       if (selected && typeof selected === 'string') {
         setRootPath(selected);
+        setFileTreeVisible(true);
         setStatusMessage(`已打开文件夹: ${selected}`);
       }
     } catch (err) {
@@ -144,6 +161,10 @@ const App: React.FC = () => {
 
         setTabs((prev) => [...prev, newTab]);
         setActiveTabPath(filePath);
+        // Default to WYSIWYG for Markdown files (Typora-style)
+        if (MARKDOWN_EXTENSIONS.has(ext)) {
+          setViewMode('wysiwyg');
+        }
         setStatusMessage(`已打开: ${name}`);
       } catch (err: unknown) {
         setStatusMessage(`错误: ${String(err)}`);
@@ -151,6 +172,9 @@ const App: React.FC = () => {
     },
     [tabs]
   );
+
+  const openFileRef = useRef(openFile);
+  openFileRef.current = openFile;
 
   useEffect(() => {
     if (didHandleInitialOpen.current) return;
@@ -162,17 +186,37 @@ const App: React.FC = () => {
 
         if (initialPath.is_dir) {
           setRootPath(initialPath.path);
+          setFileTreeVisible(true);
           setStatusMessage(`已打开文件夹: ${initialPath.path}`);
           return;
         }
 
+        // Single file opened — hide file tree by default
         if (initialPath.parent_path) {
           setRootPath(initialPath.parent_path);
         }
+        setFileTreeVisible(false);
         void openFile(initialPath.path);
       })
       .catch(() => undefined);
   }, [openFile]);
+
+  // Listen for second-instance file opens
+  useEffect(() => {
+    const unlistenPromise = listen<string[]>('second-instance-open', (event) => {
+      const args = event.payload;
+      // args[0] is the binary path, subsequent args are file paths
+      for (let i = 1; i < args.length; i++) {
+        const filePath = args[i];
+        if (filePath) {
+          void openFileRef.current(filePath);
+        }
+      }
+    });
+    return () => {
+      unlistenPromise.then((fn) => fn());
+    };
+  }, []);
 
   const handleTabClose = useCallback(
     (path: string) => {
@@ -245,18 +289,26 @@ const App: React.FC = () => {
         fileName={activeTab?.name || null}
         isModified={activeTab?.isModified || false}
         isMarkdown={isMarkdown}
+        fileTreeVisible={fileTreeVisible}
+        onToggleFileTree={() => setFileTreeVisible(!fileTreeVisible)}
+        outlineVisible={outlineVisible}
+        onToggleOutline={() => setOutlineVisible(!outlineVisible)}
+        hasFileTree={!!rootPath}
+        hasOutline={outlineHasContent}
       />
 
       <div className="app-body">
         {/* Left sidebar: File Tree */}
-        <div className="sidebar-left">
-          <FileTree
-            rootPath={rootPath}
-            onFileOpen={openFile}
-            onRootChange={handleOpenFolder}
-            refreshKey={refreshKey}
-          />
-        </div>
+        {fileTreeVisible && rootPath && (
+          <div className="sidebar-left">
+            <FileTree
+              rootPath={rootPath}
+              onFileOpen={openFile}
+              onRootChange={handleOpenFolder}
+              refreshKey={refreshKey}
+            />
+          </div>
+        )}
 
         {/* Main content area */}
         <div className="main-content">
@@ -271,7 +323,9 @@ const App: React.FC = () => {
             {!activeTab && (
               <div className="welcome-screen">
                 <div className="welcome-content">
-                  <div className="welcome-logo">AE</div>
+                  <div className="welcome-logo">
+                    <img src="/favicon.svg" alt="Any Editor" />
+                  </div>
                   <h1>Any Editor</h1>
                   <p className="welcome-subtitle">万能文件编辑器</p>
                   <p className="welcome-desc">
@@ -310,6 +364,23 @@ const App: React.FC = () => {
                 extension={activeTab.extension}
                 onContentChange={handleContentChange}
                 onCursorChange={setCurrentLine}
+                scrollToLine={currentLine}
+              />
+            )}
+
+            {activeTab && isMarkdown && viewMode === 'wysiwyg' && (
+              <MilkdownEditor
+                key={activeTab.path}
+                content={activeTab.content}
+                onContentChange={(markdown) => {
+                  setTabs((prev) =>
+                    prev.map((tab) =>
+                      tab.path === activeTabPath
+                        ? { ...tab, content: markdown, isModified: true }
+                        : tab
+                    )
+                  );
+                }}
               />
             )}
 
@@ -319,28 +390,12 @@ const App: React.FC = () => {
                 extension={activeTab.extension}
                 onContentChange={handleContentChange}
                 onCursorChange={setCurrentLine}
+                scrollToLine={currentLine}
               />
             )}
 
             {activeTab && isMarkdown && viewMode === 'preview' && (
               <MarkdownPreview content={activeTab.content} />
-            )}
-
-            {activeTab && isMarkdown && viewMode === 'split' && (
-              <div className="split-view">
-                <div className="split-left">
-                  <EditorPane
-                    content={activeTab.content}
-                    extension={activeTab.extension}
-                    onContentChange={handleContentChange}
-                    onCursorChange={setCurrentLine}
-                  />
-                </div>
-                <div className="split-divider" />
-                <div className="split-right">
-                  <MarkdownPreview content={activeTab.content} />
-                </div>
-              </div>
             )}
           </div>
         </div>
@@ -354,6 +409,7 @@ const App: React.FC = () => {
             onNavigate={handleOutlineNavigate}
             isVisible={outlineVisible}
             onToggle={() => setOutlineVisible(!outlineVisible)}
+            onHasContent={handleHasContent}
           />
         )}
       </div>

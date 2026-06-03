@@ -1,0 +1,111 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: pnpm tauri build --bundles msi
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: pnpm tauri build --bundles dmg
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: pnpm tauri build --bundles deb
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ matrix.target }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: ls -R artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Any Editor ${{ github.ref_name }}"
+          body: |
+            ## Any Editor ${{ github.ref_name }}
+
+            ### 功能
+            - Typora 风格 Markdown 所见即所得编辑器
+            - 文件类型 SVG 图标系统 (18+ 文件类型)
+            - 单实例运行 + 标签页文件打开
+            - 智能侧边栏自动显隐
+            - 编辑器与预览同步滚动
+            - 全新应用图标设计
+
+            ### 安装
+            - **Windows**: `.msi` 安装包
+            - **macOS**: `.dmg` 镜像
+            - **Linux**: `.deb` 包
+          draft: false
+          prerelease: false
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

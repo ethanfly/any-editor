@@ -1,0 +1,60 @@
+name: Bump Version
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        type: choice
+        options: [patch, minor, major, none]
+        default: patch
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    if: |
+      github.event_name == 'workflow_dispatch' && github.event.inputs.bump != 'none' ||
+      github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.do-bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump version
+        id: do-bump
+        run: |
+          BUMP="${{ github.event.inputs.bump || 'patch' }}"
+          CURRENT=$(node -p "JSON.parse(require('fs').readFileSync('./src-tauri/tauri.conf.json','utf8')).version")
+          echo "Current: $CURRENT"
+          IFS='.' read -r MAJ MIN PAT <<< "$CURRENT"
+          case "$BUMP" in
+            major) MAJ=$((MAJ+1)); MIN=0; PAT=0 ;;
+            minor) MIN=$((MIN+1)); PAT=0 ;;
+            *)     PAT=$((PAT+1)) ;;
+          esac
+          NEW="${MAJ}.${MIN}.${PAT}"
+          echo "New: $NEW"
+          echo "version=$NEW" >> $GITHUB_OUTPUT
+
+          node -e "
+            const fs=require('fs');
+            const c=JSON.parse(fs.readFileSync('./src-tauri/tauri.conf.json','utf8'));
+            c.version='$NEW';fs.writeFileSync('./src-tauri/tauri.conf.json',JSON.stringify(c,null,2)+'\n');
+            let t=fs.readFileSync('./src-tauri/Cargo.toml','utf8');
+            t=t.replace(/^version = \".*\"/m,'version = \"$NEW\"');
+            fs.writeFileSync('./src-tauri/Cargo.toml',t);
+          "
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git commit -m "chore: bump to v${NEW} [skip ci]"
+          git tag -a "v${NEW}" -m "v${NEW}"
+          git push origin main --tags

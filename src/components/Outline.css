@@ -15,7 +15,7 @@
 }
 
 .outline-panel.collapsed {
-  width: 44px;
+  display: none;
 }
 
 .outline-header {

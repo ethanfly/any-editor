@@ -9,6 +9,7 @@ interface OutlineProps {
   onNavigate: (line: number) => void;
   isVisible: boolean;
   onToggle: () => void;
+  onHasContent?: (hasContent: boolean) => void;
 }
 
 function parseOutline(content: string, extension: string): OutlineItem[] {
@@ -79,8 +80,13 @@ const Outline: React.FC<OutlineProps> = ({
   onNavigate,
   isVisible,
   onToggle,
+  onHasContent,
 }) => {
   const items = useMemo(() => parseOutline(content, extension), [content, extension]);
+
+  React.useEffect(() => {
+    onHasContent?.(items.length > 0);
+  }, [items, onHasContent]);
 
   const activeItem = useMemo(() => {
     // Find the closest heading before or at current line

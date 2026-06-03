@@ -58,11 +58,23 @@
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
 }
 
+.toolbar-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.65;
+  transition: opacity 140ms ease;
+}
+
 .toolbar-btn:hover:not(.disabled) {
   transform: translateY(-1px);
   background: #ffffff;
   border-color: var(--app-line);
   box-shadow: var(--app-shadow-sm);
+}
+
+.toolbar-btn:hover:not(.disabled) svg {
+  opacity: 1;
 }
 
 .toolbar-btn:active:not(.disabled) {
@@ -73,6 +85,16 @@
 .toolbar-btn.disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.toolbar-btn.active {
+  background: var(--app-orange-soft);
+  border-color: rgba(241, 149, 63, 0.28);
+  color: var(--app-orange-strong);
+}
+
+.toolbar-btn.active svg {
+  opacity: 1;
 }
 
 .toolbar-btn-primary {

@@ -1,0 +1,151 @@
+.milkdown-editor-wrapper {
+  height: 100%;
+  overflow: hidden;
+  background: var(--app-surface);
+}
+
+.milkdown-editor-wrapper [data-milkdown-root] {
+  height: 100%;
+}
+
+/* Milkdown editor area */
+.milkdown-editor-wrapper .editor {
+  height: 100%;
+  padding: 24px 32px;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.88;
+  color: #30363b;
+}
+
+.milkdown-editor-wrapper .editor:focus {
+  outline: none;
+}
+
+/* Override Milkdown Nord theme to match Any Editor UI */
+.milkdown-editor-wrapper .ProseMirror {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding: 24px 0;
+  outline: none;
+}
+
+.milkdown-editor-wrapper .ProseMirror h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 32px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--app-line);
+  color: var(--app-text);
+}
+
+.milkdown-editor-wrapper .ProseMirror h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 28px 0 14px;
+  color: var(--app-text);
+}
+
+.milkdown-editor-wrapper .ProseMirror h3 {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+  color: var(--app-text);
+}
+
+.milkdown-editor-wrapper .ProseMirror h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 20px 0 10px;
+}
+
+.milkdown-editor-wrapper .ProseMirror h5,
+.milkdown-editor-wrapper .ProseMirror h6 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: var(--app-text-soft);
+}
+
+.milkdown-editor-wrapper .ProseMirror p {
+  margin-bottom: 14px;
+}
+
+.milkdown-editor-wrapper .ProseMirror code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #db5f42;
+  font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.milkdown-editor-wrapper .ProseMirror pre {
+  margin: 18px 0;
+  padding: 18px 22px;
+  background: #1e293b;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.milkdown-editor-wrapper .ProseMirror pre code {
+  padding: 0;
+  background: none;
+  color: #e2e8f0;
+}
+
+.milkdown-editor-wrapper .ProseMirror blockquote {
+  margin: 18px 0;
+  padding: 12px 18px;
+  background: #f9fafb;
+  border-left: 4px solid var(--app-orange-strong);
+  border-radius: 0 8px 8px 0;
+  color: var(--app-text-soft);
+}
+
+.milkdown-editor-wrapper .ProseMirror ul,
+.milkdown-editor-wrapper .ProseMirror ol {
+  padding-left: 24px;
+  margin: 10px 0;
+}
+
+.milkdown-editor-wrapper .ProseMirror li {
+  margin: 5px 0;
+}
+
+.milkdown-editor-wrapper .ProseMirror a {
+  color: var(--app-orange-strong);
+  text-decoration: none;
+}
+
+.milkdown-editor-wrapper .ProseMirror table {
+  width: 100%;
+  margin: 16px 0;
+  border-collapse: collapse;
+}
+
+.milkdown-editor-wrapper .ProseMirror th,
+.milkdown-editor-wrapper .ProseMirror td {
+  border: 1px solid var(--app-line);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.milkdown-editor-wrapper .ProseMirror th {
+  background: var(--app-surface-muted);
+  font-weight: 700;
+}
+
+.milkdown-editor-wrapper .ProseMirror img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+
+.milkdown-editor-wrapper .ProseMirror hr {
+  margin: 28px 0;
+  border: none;
+  height: 2px;
+  background: var(--app-line);
+}

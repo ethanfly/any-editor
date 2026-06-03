@@ -28,7 +28,7 @@ export interface OutlineItem {
   id: string;
 }
 
-export type ViewMode = 'code' | 'preview' | 'split';
+export type ViewMode = 'code' | 'preview' | 'split' | 'wysiwyg';
 
 export const TEXT_EXTENSIONS = new Set([
   'txt', 'md', 'markdown', 'json', 'html', 'htm', 'css', 'js', 'jsx',

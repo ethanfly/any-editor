@@ -1,20 +1,18 @@
 .markdown-preview {
   height: 100%;
   overflow-y: auto;
-  padding: 36px 44px;
-  background: var(--app-surface-soft);
+  padding: 20px;
+  background: var(--app-surface);
+  scroll-behavior: auto;
 }
 
 .markdown-body {
-  max-width: 880px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 34px 38px;
-  color: var(--app-text);
-  background: #ffffff;
-  border: 1px solid var(--app-line);
-  border-radius: 22px;
-  box-shadow: var(--app-shadow-sm);
-  line-height: 1.85;
+  padding: 40px 48px;
+  color: #30363b;
+  line-height: 1.88;
+  font-size: 15px;
 }
 
 .markdown-body h1,
@@ -23,12 +21,11 @@
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  margin-top: 26px;
-  margin-bottom: 14px;
+  margin-top: 32px;
+  margin-bottom: 16px;
   color: var(--app-text);
-  font-weight: 760;
-  line-height: 1.35;
-  letter-spacing: -0.2px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .markdown-body h1:first-child,
@@ -38,81 +35,89 @@
 }
 
 .markdown-body h1 {
-  font-size: 30px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--app-line);
+  font-size: 32px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--app-line);
+  letter-spacing: -0.4px;
 }
 
 .markdown-body h2 {
-  font-size: 23px;
-  color: var(--app-orange-strong);
+  font-size: 24px;
+  letter-spacing: -0.3px;
 }
 
 .markdown-body h3 {
-  font-size: 18px;
-  color: var(--app-green-strong);
+  font-size: 19px;
 }
 
-.markdown-body h4 {
-  font-size: 16px;
-}
+.markdown-body h4 { font-size: 16px; }
+.markdown-body h5 { font-size: 15px; color: var(--app-text-soft); }
+.markdown-body h6 { font-size: 14px; color: var(--app-text-muted); }
 
 .markdown-body p {
-  margin-bottom: 13px;
-  color: var(--app-text-soft);
+  margin-bottom: 16px;
 }
 
 .markdown-body code {
-  padding: 2px 7px;
-  border-radius: 8px;
-  background: var(--app-orange-soft);
-  color: var(--app-orange-strong);
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #db5f42;
   font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   font-size: 13px;
 }
 
 .markdown-body pre {
-  margin: 16px 0;
-  padding: 18px 20px;
+  margin: 20px 0;
+  padding: 20px 24px;
   overflow-x: auto;
-  background: #1f2937;
-  border-radius: 16px;
+  background: #1e293b;
+  border-radius: 12px;
+  line-height: 1.65;
 }
 
 .markdown-body pre code {
   padding: 0;
   background: none;
-  color: #f8fafc;
+  color: #e2e8f0;
+  font-size: 13px;
 }
 
 .markdown-body blockquote {
-  margin: 16px 0;
-  padding: 12px 16px;
-  background: var(--app-green-soft);
-  border-left: 4px solid var(--app-green);
-  border-radius: 12px;
-  color: var(--app-text-soft);
+  margin: 20px 0;
+  padding: 14px 20px;
+  background: #f9fafb;
+  border-left: 4px solid #f1953f;
+  border-radius: 0 8px 8px 0;
+  color: #5e6673;
+}
+
+.markdown-body blockquote p:last-child {
+  margin-bottom: 0;
 }
 
 .markdown-body a {
   color: var(--app-orange-strong);
   text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 140ms ease;
 }
 
 .markdown-body a:hover {
-  text-decoration: underline;
+  border-bottom-color: var(--app-orange-strong);
 }
 
 .markdown-body table {
   width: 100%;
-  margin: 16px 0;
+  margin: 20px 0;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 .markdown-body th,
 .markdown-body td {
-  border-bottom: 1px solid var(--app-line);
-  padding: 10px 12px;
+  border: 1px solid var(--app-line);
+  padding: 10px 14px;
   text-align: left;
 }
 
@@ -123,30 +128,50 @@
 }
 
 .markdown-body tr:nth-child(even) {
-  background: rgba(247, 248, 250, 0.72);
+  background: #fbfcfd;
 }
 
 .markdown-body img {
   max-width: 100%;
-  margin: 10px 0;
-  border-radius: 16px;
-  image-rendering: auto;
+  margin: 16px 0;
+  border-radius: 10px;
 }
 
 .markdown-body ul,
 .markdown-body ol {
-  padding-left: 24px;
-  margin: 10px 0;
+  padding-left: 26px;
+  margin: 12px 0;
   color: var(--app-text-soft);
 }
 
 .markdown-body li {
-  margin: 5px 0;
+  margin: 6px 0;
+}
+
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin: 4px 0;
 }
 
 .markdown-body hr {
-  margin: 26px 0;
+  margin: 32px 0;
   border: none;
-  height: 1px;
+  height: 2px;
   background: var(--app-line);
+  border-radius: 1px;
+}
+
+.markdown-body strong {
+  color: var(--app-text);
+  font-weight: 760;
+}
+
+.markdown-body em {
+  color: var(--app-text-soft);
+}
+
+/* Task list */
+.markdown-body input[type="checkbox"] {
+  accent-color: var(--app-orange-strong);
+  margin-right: 6px;
 }

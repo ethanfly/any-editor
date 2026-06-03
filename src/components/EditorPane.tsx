@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import type { OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
@@ -9,6 +9,8 @@ interface EditorPaneProps {
   extension: string;
   onContentChange: (content: string) => void;
   onCursorChange?: (line: number) => void;
+  scrollToLine?: number;
+  onScroll?: (percent: number) => void;
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
@@ -33,9 +35,13 @@ const EditorPane: React.FC<EditorPaneProps> = ({
   extension,
   onContentChange,
   onCursorChange,
+  scrollToLine,
+  onScroll,
 }) => {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
+  const onScrollRef = useRef(onScroll);
+  onScrollRef.current = onScroll;
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -46,8 +52,28 @@ const EditorPane: React.FC<EditorPaneProps> = ({
       onCursorChange?.(e.position.lineNumber);
     });
 
+    // Listen to scroll changes for synced preview
+    editor.onDidScrollChange(() => {
+      const scrollTop = editor.getScrollTop();
+      const scrollHeight = editor.getScrollHeight();
+      const clientHeight = editor.getLayoutInfo().height;
+      const maxScroll = Math.max(scrollHeight - clientHeight, 1);
+      const percent = Math.min(Math.max(scrollTop / maxScroll, 0), 1);
+      onScrollRef.current?.(percent);
+    });
+
     editor.focus();
   };
+
+  // Navigate to a specific line when scrollToLine changes
+  useEffect(() => {
+    if (scrollToLine && editorRef.current) {
+      const editor = editorRef.current;
+      editor.revealLineInCenter(scrollToLine);
+      editor.setPosition({ lineNumber: scrollToLine, column: 1 });
+      editor.focus();
+    }
+  }, [scrollToLine]);
 
   const handleChange = useCallback(
     (value: string | undefined) => {
