@@ -353,7 +353,7 @@ function parseMarkdownToHtml(md: string): string {
     }
 
     // GFM Table detection (consecutive lines with | separators and at least one separator line)
-    if (line.includes('|') && line.trim().startsWith('|') || line.trim().endsWith('|')) {
+    if ((line.includes('|') && line.trim().startsWith('|')) || line.trim().endsWith('|')) {
       // Collect table rows until we find a non-table line
       const tableRows: string[] = [line];
       let j = i + 1;
@@ -541,6 +541,45 @@ function htmlToMarkdown(html: string): string {
     if (tag === 'input') return '';
     if (tag === 'span') return children;
 
+    // Table serialization
+    if (tag === 'table' && className.includes('md-table')) {
+      const rows: string[] = [];
+      const thead = el.querySelector('thead');
+      const tbody = el.querySelector('tbody');
+      const allRows = el.querySelectorAll('tr');
+
+      // Collect alignment info from header cells
+      const alignments: string[] = [];
+      const firstRow = allRows[0];
+      if (firstRow) {
+        firstRow.querySelectorAll('th, td').forEach(cell => {
+          const align = (cell as HTMLElement).style.textAlign || 'left';
+          alignments.push(align);
+        });
+      }
+
+      allRows.forEach((row, rowIdx) => {
+        const cells = row.querySelectorAll('th, td');
+        const cellTexts: string[] = [];
+        cells.forEach((cell) => {
+          cellTexts.push(processNode(cell).trim());
+        });
+        rows.push('| ' + cellTexts.join(' | ') + ' |');
+
+        // Insert separator after header
+        if (rowIdx === 0 && (thead || row === allRows[0])) {
+          const sepCells = cellTexts.map((_, ci) => {
+            const a = alignments[ci] || 'left';
+            if (a === 'center') return ':---:';
+            if (a === 'right') return '---:';
+            return '---';
+          });
+          rows.push('| ' + sepCells.join(' | ') + ' |');
+        }
+      });
+      return rows.join('\n') + '\n';
+    }
+ 
     return children;
   };
 
