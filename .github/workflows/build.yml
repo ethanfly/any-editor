@@ -168,6 +168,9 @@ jobs:
             - **Linux**: `.deb` 包
           draft: false
           prerelease: false
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
