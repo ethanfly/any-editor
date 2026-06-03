@@ -246,6 +246,12 @@
   text-align: center;
 }
 
+/* Raw HTML blocks */
+.wysiwyg-content .md-raw-html {
+  min-height: auto;
+  margin-bottom: 8px;
+}
+
 /* ===== Selection ===== */
 
 .wysiwyg-content ::selection {

@@ -178,7 +178,12 @@ function parseInlineMarkdown(text: string): string {
   // Restore code spans
   working = working.replace(/CODE(\d+)/g, (_m, idx: string) => codeSpans[Number(idx)] ?? '');
   working = working.split(BR_SENTINEL).join('<br>');
-  return working;
+  // Restore safe HTML tags that were escaped (allow inline HTML in Markdown)
+  return working
+    .replace(/&lt;(\/?(?:span|font|u|small|abbr|dfn|cite|time|var|samp|q|data|wbr|dl|dt|dd|figure|figcaption|details|summary|video|audio|source|iframe|canvas|svg|math|picture|embed|object|param|map|area|col|colgroup|caption|fieldset|legend|optgroup|option|datalist|output|progress|meter|ruby|rt|rp|bdi|bdo|dialog|slot|template|address|aside|footer|header|hgroup|main|nav|section|search)(?: [^&]*)?)&gt;/gi,
+      '<$1>')
+    .replace(/&lt;(\/?)div( [^&]*)?&gt;/gi, '<$1div$2>')
+    .replace(/&lt;(\/?)p( [^&]*)?&gt;/gi, '<$1p$2>');
 }
 
 /* ============================================================
@@ -449,6 +454,14 @@ function parseMarkdownToHtml(md: string): string {
       continue;
     }
 
+    // Raw HTML block (lines starting with HTML tags like <div>, <details>, etc.)
+    if (/^<\/?[a-zA-Z][a-zA-Z0-9]*(\s[^>]*)?\/?>/.test(line.trim())) {
+      // Pass raw HTML through — it renders directly in contentEditable
+      result.push(`<div class="md-line md-raw-html" data-type="raw">${line}</div>`);
+      i += 1;
+      continue;
+    }
+
     // Default paragraph
     result.push(
       `<div class="md-line" data-type="p">${parseInlineMarkdown(line)}</div>`
@@ -579,7 +592,22 @@ function htmlToMarkdown(html: string): string {
       });
       return rows.join('\n') + '\n';
     }
- 
+
+    // Raw HTML block (preserved from parseMarkdownToHtml)
+    if (tag === 'div' && dataType === 'raw') {
+      return `${children}\n`;
+    }
+
+    // Generic HTML element: reconstruct the tag to preserve it in Markdown source
+    // Block-level elements
+    if (/^(div|p|section|article|aside|header|footer|nav|main|details|summary|figure|figcaption|address|hgroup|dialog|template)$/.test(tag)) {
+      return `<${tag}>${children}</${tag}>\n`;
+    }
+    // Inline elements not handled above
+    if (/^(span|font|u|small|abbr|dfn|cite|time|var|samp|q|data|wbr|bdo|bdi|ruby|rt|rp|output|meter|progress|datalist|label)$/.test(tag)) {
+      return `<${tag}>${children}</${tag}>`;
+    }
+
     return children;
   };
 
