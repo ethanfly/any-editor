@@ -1,48 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Background circle - solid orange -->
-  <circle cx="64" cy="64" r="58" fill="#f1953f"/>
+  <!-- Background circle - lighter warm orange -->
+  <circle cx="64" cy="64" r="56" fill="#ffb46b"/>
 
-  <!-- Chameleon - green -->
+  <!-- Chameleon - centered, clear silhouette -->
   <g transform="translate(64,64)">
-    <!-- Curled tail -->
-    <path d="M -26 14 Q -38 -2 -32 -18 Q -22 -34 -8 -30 Q 6 -24 8 -8 Q 10 4 4 12"
-          fill="none" stroke="#55b981" stroke-width="8" stroke-linecap="round"/>
+    <!-- Tail - spiral curl, classic chameleon feature -->
+    <path d="M -16 22
+             C -32 24, -40 8, -34 -4
+             C -26 -18, -4 -22, 2 -8
+             C 6 2, 8 16, 12 24"
+          fill="none" stroke="#3da06a" stroke-width="8" stroke-linecap="round"/>
 
     <!-- Body -->
-    <ellipse cx="-6" cy="8" rx="20" ry="13" fill="#55b981" transform="rotate(-8,-6,8)"/>
+    <ellipse cx="4" cy="10" rx="16" ry="10" fill="#55b981" transform="rotate(-6,4,10)"/>
 
-    <!-- Back crest/spikes -->
-    <path d="M -18 -1 L -14 -9 L -9 -5 L -4 -11 L 1 -6 L 6 -9 L 9 -4"
-          fill="none" stroke="#3da06a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Belly highlight -->
+    <ellipse cx="2" cy="13" rx="10" ry="5" fill="#6dca90" transform="rotate(-6,2,13)"/>
 
-    <!-- Head -->
-    <ellipse cx="16" cy="1" rx="12" ry="10" fill="#55b981" transform="rotate(-4,16,1)"/>
+    <!-- Head - larger, more distinct -->
+    <ellipse cx="21" cy="2" rx="10" ry="8.5" fill="#55b981"/>
 
-    <!-- Head crest -->
-    <path d="M 10 -8 Q 15 -20 22 -14 Q 25 -10 20 -7"
+    <!-- Head crest/casque - classic chameleon feature -->
+    <path d="M 16 -7 L 14 -16 Q 17 -18 20 -14 Q 22 -10 22 -7"
           fill="#3da06a"/>
 
-    <!-- Eye - orange -->
-    <circle cx="21" cy="0" r="5.5" fill="white"/>
-    <circle cx="22" cy="-0.5" r="4.5" fill="#f1953f"/>
-    <circle cx="23" cy="-1" r="2.5" fill="#20242a"/>
-    <circle cx="24" cy="-1.8" r="1" fill="white"/>
+    <!-- Eye - prominent, with turret-like ring -->
+    <circle cx="24" cy="0" r="6" fill="white"/>
+    <circle cx="25" cy="-0.5" r="4.5" fill="#ff8c42"/>
+    <circle cx="26" cy="-1" r="2.5" fill="#20242a"/>
+    <circle cx="26.8" cy="-1.8" r="0.9" fill="white"/>
 
-    <!-- Mouth -->
-    <path d="M 26 5 Q 28 6 27 7.5" fill="none" stroke="#3da06a" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Mouth line -->
+    <path d="M 28 4.5 Q 30 5.5 29 6.5" fill="none" stroke="#3da06a" stroke-width="1.2" stroke-linecap="round"/>
 
-    <!-- Front legs -->
-    <path d="M -2 18 L -6 28 L -10 31" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 8 17 L 6 28 L 2 31" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Front leg -->
+    <path d="M 8 18 Q 6 26 2 28" fill="none" stroke="#55b981" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="2" cy="28" r="2.5" fill="#3da06a"/>
 
-    <!-- Back legs -->
-    <path d="M -18 16 L -22 26 L -26 29" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M -10 17 L -12 28 L -16 31" fill="none" stroke="#55b981" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <!-- Tongue -->
-    <path d="M 27 6 Q 31 7 30 4" fill="none" stroke="#f1953f" stroke-width="2" stroke-linecap="round"/>
+    <!-- Back leg -->
+    <path d="M -4 17 Q -8 25 -12 27" fill="none" stroke="#55b981" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="-12" cy="27" r="2.5" fill="#3da06a"/>
   </g>
-
-  <!-- Subtle inner ring -->
-  <circle cx="64" cy="64" r="55" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
 </svg>
