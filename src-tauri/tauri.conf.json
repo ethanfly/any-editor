@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Any Editor",
   "mainBinaryName": "AnyEdit",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "identifier": "com.any-editor.app",
   "build": {
     "frontendDist": "../dist",
@@ -40,7 +40,10 @@
     "windows": {
       "nsis": {
         "installerHooks": "windows-context-menu.nsh",
-        "languages": ["SimpChinese", "English"],
+        "languages": [
+          "SimpChinese",
+          "English"
+        ],
         "displayLanguageSelector": true
       }
     },
