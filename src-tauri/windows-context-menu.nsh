@@ -1,7 +1,6 @@
 !macro NSIS_HOOK_PREINSTALL
-  ; Copy WebView2Loader.dll — Tauri 2 NSIS template doesn't auto-include it
-  SetOutPath $INSTDIR
-  File "..\..\WebView2Loader.dll"
+  ; WebView2Loader is statically linked by MSVC (default in Tauri 2).
+  ; No separate DLL copy is needed.
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
