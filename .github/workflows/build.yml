@@ -49,6 +49,7 @@ jobs:
         shell: bash
 
       - name: Set version in config
+        shell: bash
         run: |
           node -e "
             const fs=require('fs');
