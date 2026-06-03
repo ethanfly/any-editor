@@ -38,7 +38,7 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": "downloadBootstrapper",
+      "webviewInstallMode": "embedBootstrapper",
       "nsis": {
         "installerHooks": "windows-context-menu.nsh",
         "languages": [
