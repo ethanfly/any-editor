@@ -114,7 +114,8 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          pattern: '*'
+          path: artifacts/
 
       - name: Determine version
         id: version
@@ -127,7 +128,7 @@ jobs:
         shell: bash
 
       - name: Display structure
-        run: ls -R artifacts/
+        run: ls -R artifacts/ || echo "No artifacts found"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
