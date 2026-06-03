@@ -92,16 +92,16 @@
           "patch",
           "lock"
         ],
-        "name": "Any Editor 文档",
-        "description": "Any Editor 文件",
+        "name": "Any Editor Document",
+        "description": "Any Editor file",
         "role": "Editor"
       },
       {
         "ext": [
           "pdf"
         ],
-        "name": "PDF 文档",
-        "description": "PDF 文件",
+        "name": "PDF Document",
+        "description": "PDF file",
         "role": "Viewer"
       }
     ],
@@ -112,7 +112,7 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": "downloadBootstrapper",
+      "webviewInstallMode": "embedBootstrapper",
       "nsis": {
         "installerHooks": "windows-context-menu.nsh",
         "languages": [
