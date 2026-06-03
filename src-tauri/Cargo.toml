@@ -25,3 +25,6 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-single-instance = "2"
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = { version = "0.38", features = ["static"] }
