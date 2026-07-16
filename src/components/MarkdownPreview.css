@@ -175,3 +175,31 @@
   accent-color: var(--app-orange-strong);
   margin-right: 6px;
 }
+
+
+.markdown-body .mermaid-src,
+.markdown-body .mermaid-rendered {
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  background: var(--app-surface-soft);
+  overflow: auto;
+}
+
+.markdown-body .mermaid-rendered svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-body .mermaid-error,
+.markdown-body .math-error {
+  color: var(--app-danger);
+  white-space: pre-wrap;
+}
+
+.markdown-body .katex-display {
+  margin: 14px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}

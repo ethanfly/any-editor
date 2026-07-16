@@ -42,12 +42,11 @@
 
 | 平台 | 安装包 | 安装方式 |
 |------|--------|----------|
-| Windows | `.msi` | 双击运行，按向导完成安装 |
+| Windows | `.exe` (NSIS) | 双击运行，按向导完成安装 |
 | macOS | `.dmg` | 打开后拖入「应用程序」文件夹 |
 | Linux | `.deb` | `sudo dpkg -i any-editor_*.deb` |
 
 安装完成后即可直接打开任意文本、Markdown、代码文件进行编辑。
-
 ## 开发
 
 ### 环境要求
@@ -74,7 +73,7 @@ pnpm tauri build
 
 | 平台 | 安装包路径 |
 |------|-----------|
-| Windows | `src-tauri/target/release/bundle/msi/*.msi` |
+| Windows | `src-tauri/target/release/bundle/nsis/*.exe` |
 | macOS | `src-tauri/target/release/bundle/dmg/*.dmg` |
 | Linux | `src-tauri/target/release/bundle/deb/*.deb` |
 
@@ -90,7 +89,7 @@ node scripts/generate-icons.mjs
 
 ```
 push main → Bump Version → 创建版本 Tag → Build & Release
-                                 ├── Windows (.msi)
+                                 ├── Windows (.exe / NSIS)
                                  ├── macOS (.dmg)
                                  └── Linux (.deb)
 ```

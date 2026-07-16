@@ -1,11 +1,8 @@
 {
   "name": "any-editor",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.33",
   "type": "module",
-  "pnpm": {
-    "onlyBuiltDependencies": ["sharp"]
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -21,7 +18,9 @@
     "@types/dompurify": "^3.2.0",
     "dompurify": "^3.4.7",
     "highlight.js": "^11.11.1",
+    "katex": "^0.17.0",
     "marked": "^18.0.4",
+    "mermaid": "^11.16.0",
     "pdfjs-dist": "^6.0.227",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"

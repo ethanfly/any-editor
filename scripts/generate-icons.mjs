@@ -15,6 +15,7 @@ const svgBuffer = readFileSync(svgPath);
 const targets = [
   // Tauri app icons
   ['src-tauri/icons/32x32.png', 32],
+  ['src-tauri/icons/64x64.png', 64],
   ['src-tauri/icons/128x128.png', 128],
   ['src-tauri/icons/128x128@2x.png', 256],
   ['src-tauri/icons/icon.png', 512],

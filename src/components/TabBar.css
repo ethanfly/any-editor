@@ -140,3 +140,14 @@
   color: #cf5f5f;
   background: rgba(230, 129, 129, 0.14);
 }
+
+
+.tab-item.drag-over {
+  box-shadow: inset 2px 0 0 var(--app-orange-strong);
+}
+.tab-item[draggable='true'] {
+  cursor: grab;
+}
+.tab-item[draggable='true']:active {
+  cursor: grabbing;
+}

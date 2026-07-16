@@ -321,6 +321,66 @@ button:focus-visible {
   background: var(--app-orange);
 }
 
+.split-editor,
+.split-preview {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.binary-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(247, 248, 250, 0.9));
+}
+
+.binary-placeholder-card {
+  max-width: 480px;
+  width: 100%;
+  padding: 28px 32px;
+  border-radius: var(--app-radius);
+  border: 1px solid var(--app-line);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
+  text-align: center;
+}
+
+.binary-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--app-orange-soft);
+  color: var(--app-orange-strong);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.binary-placeholder-card h2 {
+  margin-bottom: 8px;
+  font-size: 18px;
+  color: var(--app-text);
+}
+
+.binary-placeholder-card p {
+  color: var(--app-text-soft);
+  line-height: 1.6;
+}
+
+.binary-path {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--app-text-muted);
+  word-break: break-all;
+}
+
 .status-bar {
   display: flex;
   align-items: center;
@@ -356,4 +416,104 @@ button:focus-visible {
 
 .status-item {
   color: var(--app-green-strong);
+}
+
+/* ===== Dark theme ===== */
+.app[data-theme="dark"],
+html[data-theme="dark"] body {
+  --app-bg: #171a1f;
+  --app-surface: #1f242b;
+  --app-surface-soft: #242a32;
+  --app-surface-muted: #2a313a;
+  --app-text: #e8edf2;
+  --app-text-soft: #a8b0ba;
+  --app-text-muted: #7c8693;
+  --app-line: #313944;
+  --app-line-strong: #3d4652;
+  --app-orange: #ffb46b;
+  --app-orange-strong: #f1953f;
+  --app-orange-soft: #3a2c1d;
+  --app-green: #9eddb6;
+  --app-green-strong: #55b981;
+  --app-green-soft: #1d3228;
+  --app-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+  --app-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: var(--app-text);
+  background: var(--app-bg);
+}
+
+
+.welcome-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(420px, 100%);
+  margin: 0 auto 20px;
+  text-align: left;
+}
+.welcome-recent-title {
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.welcome-recent-item {
+  border: 1px solid var(--app-line);
+  background: var(--app-surface);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--app-text-soft);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+.welcome-recent-item:hover {
+  border-color: var(--app-orange);
+  color: var(--app-text);
+}
+
+
+/* Focus mode: maximize writing canvas */
+.app.focus-mode .sidebar-left,
+.app.focus-mode .outline-panel,
+.app.focus-mode .search-panel,
+.app.focus-mode .toolbar-left,
+.app.focus-mode .toolbar-right,
+.app.focus-mode .tab-bar {
+  display: none !important;
+}
+.app.focus-mode .toolbar {
+  justify-content: center;
+}
+.app.focus-mode .toolbar-center {
+  flex: 1;
+  justify-content: center;
+}
+.app.focus-mode .main-content {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.app.focus-mode .status-bar {
+  opacity: 0.85;
+}
+
+
+.app.drag-active::after {
+  content: '释放以打开文件 / 文件夹';
+  position: fixed;
+  inset: 12px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--app-orange-strong);
+  border-radius: 18px;
+  background: rgba(255, 244, 231, 0.72);
+  color: var(--app-orange-strong);
+  font-size: 18px;
+  font-weight: 800;
+  pointer-events: none;
+}
+.app[data-theme='dark'].drag-active::after {
+  background: rgba(58, 44, 29, 0.72);
 }

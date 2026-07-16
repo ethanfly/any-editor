@@ -1,11 +1,15 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import hljs from 'highlight.js/lib/common';
+import DOMPurify from 'dompurify';
+import { rewriteHtmlImageSources, toDisplaySrc } from '../utils/mediaUrl';
 import './WysiwygEditor.css';
 
 interface WysiwygEditorProps {
   content: string;
+  filePath?: string;
   onContentChange: (markdown: string) => void;
-  scrollToLine?: number;
+  scrollToLine?: { line: number; token: number } | null;
+  onPasteImage?: (file: File) => Promise<string | null>;
 }
 
 /* ============================================================
@@ -87,11 +91,99 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function escapeAttr(text: string): string {
+  return escapeHtml(text).replace(/'/g, '&#39;');
+}
+
+function isSafeUrl(url: string): boolean {
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  if (/^(https?:|mailto:|tel:|\/|\.\/|\.\.\/|#)/i.test(trimmed)) return true;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return false;
+  return true;
+}
+
+
+/** Sanitize HTML for safe WYSIWYG rendering (Markdown inline/block HTML). */
+function sanitizeRichHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ADD_ATTR: ['target', 'rel', 'class', 'id', 'open', 'colspan', 'rowspan', 'align', 'style', 'width', 'height', 'data-original-src'],
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'link', 'meta', 'base'],
+    FORBID_ATTR: ['srcdoc'],
+    ALLOW_DATA_ATTR: true,
+  });
+}
+
+function looksLikeHtmlLine(line: string): boolean {
+  return /^<\/?[a-zA-Z][a-zA-Z0-9]*(\s[^>]*)?\/?>/.test(line.trim());
+}
+
+/**
+ * Process a plain-text segment with Markdown inline syntax (no raw HTML tags).
+ */
+function parsePlainInlineMarkdown(text: string): string {
+  let working = expandHtmlInline(text);
+
+  const codeSpans: string[] = [];
+  working = working.replace(/`([^`\n]+?)`/g, (_match, code: string) => {
+    const idx = codeSpans.push(`<code class="md-code">${escapeHtml(code)}</code>`) - 1;
+    return `CODE${idx}`;
+  });
+
+  working = decodeEscapes(working);
+  working = escapeHtml(working);
+
+  working = working.replace(/`([^`\n]+?)`/g, (_match, code: string) => {
+    const idx = codeSpans.push(`<code class="md-code">${escapeHtml(code)}</code>`) - 1;
+    return `CODE${idx}`;
+  });
+
+  working = working
+    .replace(/!\[([^\]]*?)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g,
+      (_m, alt: string, url: string, title?: string) => {
+        if (!isSafeUrl(url)) return escapeHtml(`![${alt}](${url})`);
+        return `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}"${title ? ` title="${escapeAttr(title)}"` : ''} class="md-image">`;
+      })
+    .replace(/!\[([^\]]*?)\]\(([^)]+?)\)/g, (_m, alt: string, url: string) => {
+      if (!isSafeUrl(url)) return escapeHtml(`![${alt}](${url})`);
+      return `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" class="md-image">`;
+    })
+    .replace(/\[([^\]]+?)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g,
+      (_m, label: string, url: string, title?: string) => {
+        if (!isSafeUrl(url)) return escapeHtml(`[${label}](${url})`);
+        return `<a href="${escapeAttr(url)}"${title ? ` title="${escapeAttr(title)}"` : ''} class="md-link" rel="noopener noreferrer">${label}</a>`;
+      })
+    .replace(/\[([^\]]+?)\]\(([^)]+?)\)/g, (_m, label: string, url: string) => {
+      if (!isSafeUrl(url)) return escapeHtml(`[${label}](${url})`);
+      return `<a href="${escapeAttr(url)}" class="md-link" rel="noopener noreferrer">${label}</a>`;
+    });
+
+  working = working
+    .replace(/&lt;(https?:\/\/[^\s<>]+)&gt;/g, '<a href="$1" class="md-link" rel="noopener noreferrer">$1</a>')
+    .replace(/&lt;([\w.+-]+@[\w-]+(\.[\w-]+)+)&gt;/g, '<a href="mailto:$1" class="md-link">$1</a>');
+
+  working = working
+    .replace(/\*\*([^*\n]+?)\*\*/g, '<strong class="md-bold">$1</strong>')
+    .replace(/__([^_\n]+?)__/g, '<strong class="md-bold">$1</strong>')
+    .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em class="md-italic">$1</em>')
+    .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="md-italic">$1</em>')
+    .replace(/~~([^~\n]+?)~~/g, '<del class="md-strike">$1</del>')
+    .replace(/==([^=\n]+?)==/g, '<mark class="md-highlight">$1</mark>')
+    .replace(/\^([^^\n]+?)\^/g, '<sup class="md-superscript">$1</sup>')
+    .replace(/(?<!~)~([^~\n]+?)~(?!~)/g, '<sub class="md-subscript">$1</sub>');
+
+  working = working.replace(/CODE(\d+)/g, (_m, idx: string) => codeSpans[Number(idx)] ?? '');
+  working = working.split(BR_SENTINEL).join('<br>');
+  return working;
+}
+
+
 /* ============================================================
  *  INLINE MARKDOWN PARSER
  * ============================================================ */
 
-const BR_SENTINEL = 'BR';
+const BR_SENTINEL = 'BR';
 
 const HTML_INLINE_TAGS: Array<{
   open: RegExp;
@@ -126,64 +218,60 @@ function expandHtmlInline(text: string): string {
 }
 
 function decodeEscapes(text: string): string {
-  return text.replace(/\\([\\`*_{}\[\]()#+\-.!>~^=|:])/g, '$1');
+  return text.replace(/\\([\\`*_{}[\]()#+\-.!>~^=|:])/g, '$1');
 }
 
 function parseInlineMarkdown(text: string): string {
-  let working = expandHtmlInline(text);
+  // Split into HTML tags and plain text so HTML keeps its rendered effect
+  // while Markdown syntax still works on surrounding text.
+  const parts = text.split(/(<\/?[a-zA-Z][^>]*>)/g);
+  let out = '';
+  let htmlBuffer = '';
+  let depth = 0;
 
-  // Extract code spans first
-  const codeSpans: string[] = [];
-  working = working.replace(/`([^`\n]+?)`/g, (_match, code: string) => {
-    const idx = codeSpans.push(`<code class="md-code">${escapeHtml(code)}</code>`) - 1;
-    return `CODE${idx}`;
-  });
+  const flushHtml = () => {
+    if (!htmlBuffer) return;
+    out += sanitizeRichHtml(htmlBuffer);
+    htmlBuffer = '';
+    depth = 0;
+  };
 
-  working = decodeEscapes(working);
-  working = escapeHtml(working);
+  for (const part of parts) {
+    if (!part) continue;
 
-  // Re-extract after escape (handles code spans that were escaped)
-  working = working.replace(/`([^`\n]+?)`/g, (_match, code: string) => {
-    const idx = codeSpans.push(`<code class="md-code">${escapeHtml(code)}</code>`) - 1;
-    return `CODE${idx}`;
-  });
+    if (/^<\/?[a-zA-Z][^>]*>$/.test(part)) {
+      const isClosing = /^<\//.test(part);
+      const isSelfClosing = /\/>$/.test(part) || /^<(br|hr|img|input|meta|link|wbr|source|area|col|embed|param|track)\b/i.test(part);
 
-  // Images & Links
-  working = working
-    .replace(/!\[([^\]]*?)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g,
-      (_m, alt: string, url: string, title?: string) =>
-        `<img src="${url}" alt="${alt}"${title ? ` title="${title}"` : ''} class="md-image">`)
-    .replace(/!\[([^\]]*?)\]\(([^)]+?)\)/g, '<img src="$2" alt="$1" class="md-image">')
-    .replace(/\[([^\]]+?)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g,
-      (_m, label: string, url: string, title?: string) =>
-        `<a href="${url}"${title ? ` title="${title}"` : ''} class="md-link">${label}</a>`)
-    .replace(/\[([^\]]+?)\]\(([^)]+?)\)/g, '<a href="$2" class="md-link">$1</a>');
+      if (depth === 0 && !isClosing) {
+        // starting a new HTML island
+        htmlBuffer = part;
+        depth = isSelfClosing ? 0 : 1;
+        if (depth === 0) flushHtml();
+        continue;
+      }
 
-  // Auto-links
-  working = working
-    .replace(/&lt;(https?:\/\/[^\s<>]+)&gt;/g, '<a href="$1" class="md-link">$1</a>')
-    .replace(/&lt;([\w.+-]+@[\w-]+(\.[\w-]+)+)&gt;/g, '<a href="mailto:$1" class="md-link">$1</a>');
+      htmlBuffer += part;
+      if (isClosing) {
+        depth = Math.max(0, depth - 1);
+        if (depth === 0) flushHtml();
+      } else if (!isSelfClosing) {
+        depth += 1;
+      } else if (depth === 0) {
+        flushHtml();
+      }
+      continue;
+    }
 
-  // Inline formatting
-  working = working
-    .replace(/\*\*([^*\n]+?)\*\*/g, '<strong class="md-bold">$1</strong>')
-    .replace(/__([^_\n]+?)__/g, '<strong class="md-bold">$1</strong>')
-    .replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em class="md-italic">$1</em>')
-    .replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="md-italic">$1</em>')
-    .replace(/~~([^~\n]+?)~~/g, '<del class="md-strike">$1</del>')
-    .replace(/==([^=\n]+?)==/g, '<mark class="md-highlight">$1</mark>')
-    .replace(/\^([^^\n]+?)\^/g, '<sup class="md-superscript">$1</sup>')
-    .replace(/(?<!~)~([^~\n]+?)~(?!~)/g, '<sub class="md-subscript">$1</sub>');
+    if (depth > 0) {
+      htmlBuffer += part;
+    } else {
+      out += parsePlainInlineMarkdown(part);
+    }
+  }
 
-  // Restore code spans
-  working = working.replace(/CODE(\d+)/g, (_m, idx: string) => codeSpans[Number(idx)] ?? '');
-  working = working.split(BR_SENTINEL).join('<br>');
-  // Restore safe HTML tags that were escaped (allow inline HTML in Markdown)
-  return working
-    .replace(/&lt;(\/?(?:span|font|u|small|abbr|dfn|cite|time|var|samp|q|data|wbr|dl|dt|dd|figure|figcaption|details|summary|video|audio|source|iframe|canvas|svg|math|picture|embed|object|param|map|area|col|colgroup|caption|fieldset|legend|optgroup|option|datalist|output|progress|meter|ruby|rt|rp|bdi|bdo|dialog|slot|template|address|aside|footer|header|hgroup|main|nav|section|search)(?: [^&]*)?)&gt;/gi,
-      '<$1>')
-    .replace(/&lt;(\/?)div( [^&]*)?&gt;/gi, '<$1div$2>')
-    .replace(/&lt;(\/?)p( [^&]*)?&gt;/gi, '<$1p$2>');
+  flushHtml();
+  return out;
 }
 
 /* ============================================================
@@ -260,7 +348,7 @@ function createLineElement(blockType: BlockType, content: string = ''): HTMLElem
  *  MARKDOWN → HTML (for initial display)
  * ============================================================ */
 
-function parseMarkdownToHtml(md: string): string {
+function parseMarkdownToHtml(md: string, filePath?: string): string {
   if (!md) return '<div class="md-line" data-type="p"><br></div>';
 
   // Normalize CRLF / CR → LF so Windows-style files parse identically to
@@ -445,8 +533,11 @@ function parseMarkdownToHtml(md: string): string {
       const alt = imgMatch[1];
       const src = imgMatch[2];
       const title = imgMatch[3];
+      const display = toDisplaySrc(filePath, src);
+      const originalAttr =
+        display !== src ? ` data-original-src="${escapeAttr(src)}"` : '';
       result.push(
-        `<p class="md-image-block"><img src="${src}" alt="${alt}"${title ? ` title="${title}"` : ''} class="md-image"></p>`
+        `<p class="md-image-block"><img src="${escapeAttr(display)}" alt="${escapeAttr(alt)}"${title ? ` title="${escapeAttr(title)}"` : ''}${originalAttr} class="md-image"></p>`
       );
       i += 1;
       continue;
@@ -459,11 +550,47 @@ function parseMarkdownToHtml(md: string): string {
       continue;
     }
 
-    // Raw HTML block (lines starting with HTML tags like <div>, <details>, etc.)
-    if (/^<\/?[a-zA-Z][a-zA-Z0-9]*(\s[^>]*)?\/?>/.test(line.trim())) {
-      // Pass raw HTML through — it renders directly in contentEditable
-      result.push(`<div class="md-line md-raw-html" data-type="raw">${line}</div>`);
-      i += 1;
+    // Raw HTML block — collect consecutive HTML-ish lines, sanitize, and render
+    if (looksLikeHtmlLine(line)) {
+      const htmlLines: string[] = [line];
+      let j = i + 1;
+      while (j < lines.length) {
+        const next = lines[j];
+        // Keep blank lines inside HTML islands (pretty-printed markup)
+        if (next.trim() === '') {
+          htmlLines.push(next);
+          j += 1;
+          continue;
+        }
+        // Keep gathering while it still looks like HTML / nested markup / attributes
+        if (
+          looksLikeHtmlLine(next) ||
+          /^\s*</.test(next) ||
+          /<\/[a-zA-Z]/.test(next) ||
+          /['"]\s*>/.test(next) ||
+          /^\s*[a-zA-Z_:][-a-zA-Z0-9_:.]*\s*=/.test(next)
+        ) {
+          htmlLines.push(next);
+          j += 1;
+          continue;
+        }
+        break;
+      }
+
+      const rawSource = htmlLines.join('\n');
+      const safe = sanitizeRichHtml(rawSource);
+      const encodedSource = encodeURIComponent(rawSource);
+      if (safe.trim()) {
+        result.push(
+          `<div class="md-line md-raw-html" data-type="raw" data-raw-source="${encodedSource}">${safe}</div>`
+        );
+      } else {
+        // Sanitizer stripped everything — show escaped source so content is not lost
+        result.push(
+          `<div class="md-line md-raw-html" data-type="raw" data-raw-source="${encodedSource}"><code class="md-code">${escapeHtml(rawSource)}</code></div>`
+        );
+      }
+      i = j;
       continue;
     }
 
@@ -480,7 +607,8 @@ function parseMarkdownToHtml(md: string): string {
     );
   }
 
-  return result.join('');
+  const joined = result.join('');
+  return rewriteHtmlImageSources(joined, filePath);
 }
 
 /* ============================================================
@@ -491,13 +619,34 @@ function htmlToMarkdown(html: string): string {
   const temp = document.createElement('div');
   temp.innerHTML = html;
 
+  const ATTR_ALLOW = new Set([
+    'align', 'width', 'height', 'href', 'src', 'alt', 'title', 'class', 'id',
+    'open', 'colspan', 'rowspan', 'style', 'target', 'rel',
+  ]);
+
+  const serializeAttrs = (el: Element): string => {
+    let out = '';
+    for (const attr of Array.from(el.attributes)) {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith('data-')) continue;
+      if (!ATTR_ALLOW.has(name)) continue;
+      // Prefer original src when present (display URL is not source of truth)
+      if (name === 'src' && el.hasAttribute('data-original-src')) continue;
+      out += ` ${name}="${attr.value.replace(/"/g, '&quot;')}"`;
+    }
+    if (el.hasAttribute('data-original-src')) {
+      out += ` src="${(el.getAttribute('data-original-src') || '').replace(/"/g, '&quot;')}"`;
+    }
+    return out;
+  };
+
   const processNode = (node: Node): string => {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
 
     const el = node as Element;
     const tag = el.tagName.toLowerCase();
-    const className = el.className || '';
+    const className = typeof el.className === 'string' ? el.className : '';
     const dataType = el.getAttribute('data-type') || '';
     const children = Array.from(el.childNodes).map(processNode).join('');
 
@@ -510,6 +659,18 @@ function htmlToMarkdown(html: string): string {
 
     // Line elements
     if (tag === 'div' && className.includes('md-line')) {
+      // Raw HTML blocks must round-trip as original source
+      if (dataType === 'raw') {
+        const encoded = el.getAttribute('data-raw-source');
+        if (encoded) {
+          try {
+            return `${decodeURIComponent(encoded)}\n`;
+          } catch {
+            return `${encoded}\n`;
+          }
+        }
+        return `${el.innerHTML}\n`;
+      }
       switch (dataType) {
         case 'h1': return `# ${children}\n`;
         case 'h2': return `## ${children}\n`;
@@ -551,8 +712,13 @@ function htmlToMarkdown(html: string): string {
       return `[${children}](${href})`;
     }
     if (tag === 'img') {
-      const src = el.getAttribute('src') || '';
+      const src = el.getAttribute('data-original-src') || el.getAttribute('src') || '';
       const alt = el.getAttribute('alt') || '';
+      // If this image sits inside a raw HTML island, the parent will emit full HTML.
+      // For markdown images, emit markdown form.
+      if (el.closest('[data-type="raw"]')) {
+        return `<img${serializeAttrs(el)} />`;
+      }
       return `![${alt}](${src})`;
     }
     if (tag === 'br') return '';
@@ -598,19 +764,16 @@ function htmlToMarkdown(html: string): string {
       return rows.join('\n') + '\n';
     }
 
-    // Raw HTML block (preserved from parseMarkdownToHtml)
-    if (tag === 'div' && dataType === 'raw') {
-      return `${children}\n`;
+    // Generic HTML element: reconstruct with attributes (fallback when not wrapped as raw)
+    if (/^(div|p|section|article|aside|header|footer|nav|main|details|summary|figure|figcaption|address|hgroup|dialog|template|center)$/.test(tag)) {
+      const attrs = serializeAttrs(el);
+      const voidish = !children && /^(br|hr)$/.test(tag);
+      if (voidish) return `<${tag}${attrs} />\n`;
+      return `<${tag}${attrs}>${children}</${tag}>\n`;
     }
-
-    // Generic HTML element: reconstruct the tag to preserve it in Markdown source
-    // Block-level elements
-    if (/^(div|p|section|article|aside|header|footer|nav|main|details|summary|figure|figcaption|address|hgroup|dialog|template)$/.test(tag)) {
-      return `<${tag}>${children}</${tag}>\n`;
-    }
-    // Inline elements not handled above
     if (/^(span|font|u|small|abbr|dfn|cite|time|var|samp|q|data|wbr|bdo|bdi|ruby|rt|rp|output|meter|progress|datalist|label)$/.test(tag)) {
-      return `<${tag}>${children}</${tag}>`;
+      const attrs = serializeAttrs(el);
+      return `<${tag}${attrs}>${children}</${tag}>`;
     }
 
     return children;
@@ -664,56 +827,91 @@ function syncHeadingIds(editor: HTMLElement) {
  *  WYSIWYG EDITOR COMPONENT
  * ============================================================ */
 
-const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange, scrollToLine }) => {
+const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onContentChange, scrollToLine, onPasteImage }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isInternalChange, setIsInternalChange] = useState(false);
   const onChangeRef = useRef(onContentChange);
-  onChangeRef.current = onContentChange;
+  const lastNavTokenRef = useRef<number | null>(null);
+  const initializedRef = useRef(false);
+  const baselineRef = useRef(content);
 
-  // Initialize content
   useEffect(() => {
-    if (editorRef.current && !isInternalChange) {
-      const currentMd = htmlToMarkdown(editorRef.current.innerHTML);
-      if (currentMd !== content) {
-        editorRef.current.innerHTML = parseMarkdownToHtml(content);
-        syncHeadingIds(editorRef.current);
-        applySyntaxHighlighting(editorRef.current);
-      }
+    onChangeRef.current = onContentChange;
+  }, [onContentChange]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    if (!initializedRef.current) {
+      editor.innerHTML = parseMarkdownToHtml(content, filePath);
+      syncHeadingIds(editor);
+      applySyntaxHighlighting(editor);
+      baselineRef.current = content;
+      initializedRef.current = true;
+      return;
     }
-  }, [content, isInternalChange]);
 
-  // Scroll to line when outline is clicked
+    if (isInternalChange) return;
+
+    // Only re-parse when external content actually changed vs last known source
+    if (content !== baselineRef.current) {
+      editor.innerHTML = parseMarkdownToHtml(content, filePath);
+      syncHeadingIds(editor);
+      applySyntaxHighlighting(editor);
+      baselineRef.current = content;
+    }
+  }, [content, filePath, isInternalChange]);
+
   useEffect(() => {
-    if (scrollToLine && editorRef.current) {
-      const editor = editorRef.current;
-      // Try heading by data-line first (exact line number match)
-      const headingEl = editor.querySelector(`[data-line="${scrollToLine}"]`);
-      if (headingEl) {
-        headingEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-      // Fallback: scroll to Nth child block
-      const blocks = editor.children;
-      const idx = Math.min(scrollToLine - 1, blocks.length - 1);
-      if (idx >= 0 && blocks[idx]) {
-        blocks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    if (!scrollToLine || !editorRef.current) return;
+    if (lastNavTokenRef.current === scrollToLine.token) return;
+    lastNavTokenRef.current = scrollToLine.token;
+
+    const editor = editorRef.current;
+    const headingEl = editor.querySelector(`[data-line="${scrollToLine.line}"]`);
+    if (headingEl) {
+      headingEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    const blocks = editor.children;
+    const idx = Math.min(scrollToLine.line - 1, blocks.length - 1);
+    if (idx >= 0 && blocks[idx]) {
+      blocks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [scrollToLine]);
 
-  // Update content
   const updateContent = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
     setIsInternalChange(true);
     syncHeadingIds(editor);
     const md = htmlToMarkdown(editor.innerHTML);
+    baselineRef.current = md;
     onChangeRef.current(md);
     applySyntaxHighlighting(editor);
     setTimeout(() => setIsInternalChange(false), 0);
   }, []);
 
-  // Handle input
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target || target.tagName !== 'INPUT') return;
+      const input = target as HTMLInputElement;
+      if (input.type !== 'checkbox') return;
+      const task = input.closest('.md-task') as HTMLElement | null;
+      if (!task) return;
+      task.setAttribute('data-checked', String(input.checked));
+      updateContent();
+    };
+
+    editor.addEventListener('click', onClick);
+    return () => editor.removeEventListener('click', onClick);
+  }, [updateContent]);
+
   const handleInput = useCallback(
     (e: React.FormEvent) => {
       const editor = editorRef.current;
@@ -725,7 +923,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
       const text = lineEl.textContent || '';
       const pos = getCaretPosition(lineEl);
 
-      // Check task list inside ul
       if (lineEl.getAttribute('data-type') === 'li' && lineEl.getAttribute('data-list') === 'ul') {
         const taskInListMatch = text.match(/^\s*\[([ xX])\]\s*(.*)$/);
         if (taskInListMatch) {
@@ -743,7 +940,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
         }
       }
 
-      // Space after markdown prefix → convert block type
       if (e.nativeEvent instanceof InputEvent && e.nativeEvent.data === ' ') {
         const textBeforeSpace = text.substring(0, pos - 1).trim();
         const blockType = detectBlockType(textBeforeSpace);
@@ -762,7 +958,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
     [updateContent]
   );
 
-  // Handle keydown
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const editor = editorRef.current;
@@ -773,22 +968,72 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
 
       const lineEl = getCurrentLineElement(editor);
 
-      // Enter: create new paragraph
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (lineEl) {
+        if (!lineEl) {
+          updateContent();
+          return;
+        }
+
+        const type = lineEl.getAttribute('data-type') || 'p';
+        const listKind = lineEl.getAttribute('data-list');
+        const text = (lineEl.textContent || '').trim();
+        const isEmpty = text === '' || text === '\u200B';
+
+        if (isEmpty && (type === 'li' || type === 'task')) {
           const newLine = document.createElement('div');
           newLine.className = 'md-line';
           newLine.setAttribute('data-type', 'p');
           newLine.innerHTML = '<br>';
-          lineEl.after(newLine);
+          lineEl.replaceWith(newLine);
           setCaretPosition(newLine, 0);
+          updateContent();
+          return;
         }
+
+        if (type === 'li' && listKind === 'ul') {
+          const newEl = createLineElement({ type: 'ul', prefix: '-', content: '' }, '');
+          lineEl.after(newEl);
+          setCaretPosition(newEl, 0);
+          updateContent();
+          return;
+        }
+
+        if (type === 'li' && listKind === 'ol') {
+          const currentNum = Number(lineEl.getAttribute('data-num') || '1');
+          const next = String(currentNum + 1);
+          const newEl = createLineElement(
+            { type: 'ol', prefix: `${next}.`, content: '', num: next },
+            ''
+          );
+          lineEl.after(newEl);
+          setCaretPosition(newEl, 0);
+          updateContent();
+          return;
+        }
+
+        if (type === 'task') {
+          const newEl = createLineElement(
+            { type: 'task', prefix: '- [ ]', content: '', checked: false },
+            ''
+          );
+          lineEl.after(newEl);
+          const textTarget = newEl.querySelector('.md-task-text');
+          setCaretPosition((textTarget as HTMLElement) || newEl, 0);
+          updateContent();
+          return;
+        }
+
+        const newLine = document.createElement('div');
+        newLine.className = 'md-line';
+        newLine.setAttribute('data-type', 'p');
+        newLine.innerHTML = '<br>';
+        lineEl.after(newLine);
+        setCaretPosition(newLine, 0);
         updateContent();
         return;
       }
 
-      // Tab: indent
       if (e.key === 'Tab' && !e.shiftKey) {
         e.preventDefault();
         document.execCommand('insertText', false, '  ');
@@ -796,7 +1041,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
         return;
       }
 
-      // Ctrl+B: bold
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
         e.preventDefault();
         document.execCommand('bold');
@@ -804,7 +1048,6 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
         return;
       }
 
-      // Ctrl+I: italic
       if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
         e.preventDefault();
         document.execCommand('italic');
@@ -813,6 +1056,28 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
       }
     },
     [updateContent]
+  );
+
+  const handlePaste = useCallback(
+    async (e: React.ClipboardEvent) => {
+      if (!onPasteImage) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (!item.type.startsWith('image/')) continue;
+        const file = item.getAsFile();
+        if (!file) continue;
+        e.preventDefault();
+        const rel = await onPasteImage(file);
+        if (!rel) return;
+        const md = `![image](${rel})`;
+        // insert at caret as markdown image line element
+        document.execCommand('insertText', false, md);
+        updateContent();
+        return;
+      }
+    },
+    [onPasteImage, updateContent]
   );
 
   return (
@@ -824,11 +1089,15 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, onContentChange,
         suppressContentEditableWarning
         onInput={handleInput}
         onKeyDown={handleKeyDown}
+        onPaste={(e) => {
+          void handlePaste(e);
+        }}
         onBlur={updateContent}
         spellCheck={false}
       />
     </div>
   );
 };
+
 
 export default WysiwygEditor;

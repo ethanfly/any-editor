@@ -144,3 +144,14 @@
   color: var(--app-orange-strong);
   box-shadow: 0 4px 16px rgba(31, 41, 55, 0.08);
 }
+
+
+.autosave-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--app-green-soft);
+  color: var(--app-green-strong);
+  font-size: 11px;
+  font-weight: 700;
+}

@@ -1,7 +1,9 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import Editor from '@monaco-editor/react';
 import type { OnMount } from '@monaco-editor/react';
-import type { editor } from 'monaco-editor';
+import type { editor, IDisposable } from 'monaco-editor';
+import type { ScrollToLine } from '../types';
+import type { FindReplaceHandlers } from './FindReplace';
 import './EditorPane.css';
 
 interface EditorPaneProps {
@@ -9,8 +11,17 @@ interface EditorPaneProps {
   extension: string;
   onContentChange: (content: string) => void;
   onCursorChange?: (line: number) => void;
-  scrollToLine?: number;
+  scrollToLine?: ScrollToLine;
   onScroll?: (percent: number) => void;
+  fontSize?: number;
+  colorTheme?: 'light' | 'dark';
+  readOnly?: boolean;
+  onFindHandlersReady?: (handlers: FindReplaceHandlers | null) => void;
+}
+
+export interface EditorPaneHandle {
+  focus: () => void;
+  getFindHandlers: () => FindReplaceHandlers | null;
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
@@ -30,49 +41,185 @@ const LANGUAGE_MAP: Record<string, string> = {
   txt: 'plaintext', gitignore: 'plaintext',
 };
 
-const EditorPane: React.FC<EditorPaneProps> = ({
-  content,
-  extension,
-  onContentChange,
-  onCursorChange,
-  scrollToLine,
-  onScroll,
-}) => {
+function buildSearchRegex(query: string, opts: { caseSensitive: boolean; regex: boolean }): RegExp | null {
+  if (!query) return null;
+  try {
+    if (opts.regex) {
+      return new RegExp(query, opts.caseSensitive ? 'g' : 'gi');
+    }
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(escaped, opts.caseSensitive ? 'g' : 'gi');
+  } catch {
+    return null;
+  }
+}
+
+const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function EditorPane(
+  {
+    content,
+    extension,
+    onContentChange,
+    onCursorChange,
+    scrollToLine,
+    onScroll,
+    fontSize = 14,
+    colorTheme = 'light',
+    readOnly = false,
+    onFindHandlersReady,
+  },
+  ref
+) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null);
   const onScrollRef = useRef(onScroll);
-  onScrollRef.current = onScroll;
+  const onCursorChangeRef = useRef(onCursorChange);
+  const lastNavTokenRef = useRef<number | null>(null);
+  const disposablesRef = useRef<IDisposable[]>([]);
 
-  const handleEditorMount: OnMount = (editor, monaco) => {
-    editorRef.current = editor;
+  useEffect(() => {
+    onScrollRef.current = onScroll;
+    onCursorChangeRef.current = onCursorChange;
+  }, [onScroll, onCursorChange]);
+
+  const getFindHandlers = useCallback((): FindReplaceHandlers | null => {
+    const ed = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!ed || !monaco) return null;
+    const model = ed.getModel();
+    if (!model) return null;
+
+    return {
+      findNext: (query, opts) => {
+        const re = buildSearchRegex(query, opts);
+        if (!re) return 0;
+        const matches = model.findMatches(query, false, opts.regex, opts.caseSensitive, null, true);
+        if (matches.length === 0) return 0;
+        const pos = ed.getPosition() || { lineNumber: 1, column: 1 };
+        const idx =
+          matches.findIndex(
+            (m) =>
+              m.range.startLineNumber > pos.lineNumber ||
+              (m.range.startLineNumber === pos.lineNumber && m.range.startColumn > pos.column)
+          ) % matches.length;
+        const target = matches[idx < 0 ? 0 : idx];
+        ed.setSelection(target.range);
+        ed.revealRangeInCenter(target.range);
+        return matches.length;
+      },
+      findPrev: (query, opts) => {
+        const matches = model.findMatches(query, false, opts.regex, opts.caseSensitive, null, true);
+        if (matches.length === 0) return 0;
+        const pos = ed.getPosition() || { lineNumber: 1, column: 1 };
+        let idx = -1;
+        for (let i = matches.length - 1; i >= 0; i--) {
+          const m = matches[i];
+          if (
+            m.range.startLineNumber < pos.lineNumber ||
+            (m.range.startLineNumber === pos.lineNumber && m.range.startColumn < pos.column)
+          ) {
+            idx = i;
+            break;
+          }
+        }
+        const target = matches[idx < 0 ? matches.length - 1 : idx];
+        ed.setSelection(target.range);
+        ed.revealRangeInCenter(target.range);
+        return matches.length;
+      },
+      replaceOne: (query, replacement, opts) => {
+        const sel = ed.getSelection();
+        if (!sel) return false;
+        const selected = model.getValueInRange(sel);
+        const re = buildSearchRegex(query, { ...opts, regex: opts.regex });
+        if (!re) return false;
+        // exact selection match against query
+        const testRe = buildSearchRegex(`^${opts.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, {
+          caseSensitive: opts.caseSensitive,
+          regex: true,
+        });
+        if (testRe && testRe.test(selected)) {
+          ed.executeEdits('replace-one', [{ range: sel, text: replacement }]);
+          return true;
+        }
+        // otherwise find next and replace
+        const matches = model.findMatches(query, false, opts.regex, opts.caseSensitive, null, true);
+        if (!matches.length) return false;
+        const m = matches[0];
+        ed.executeEdits('replace-one', [{ range: m.range, text: replacement }]);
+        ed.setPosition({ lineNumber: m.range.startLineNumber, column: m.range.startColumn + replacement.length });
+        return true;
+      },
+      replaceAll: (query, replacement, opts) => {
+        const matches = model.findMatches(query, false, opts.regex, opts.caseSensitive, null, true);
+        if (!matches.length) return 0;
+        ed.executeEdits(
+          'replace-all',
+          matches.map((m) => ({ range: m.range, text: replacement }))
+        );
+        return matches.length;
+      },
+    };
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => editorRef.current?.focus(),
+      getFindHandlers,
+    }),
+    [getFindHandlers]
+  );
+
+  useEffect(() => {
+    onFindHandlersReady?.(getFindHandlers());
+    return () => onFindHandlersReady?.(null);
+  }, [getFindHandlers, onFindHandlersReady, content, extension]);
+
+  const handleEditorMount: OnMount = (editorInstance, monaco) => {
+    disposablesRef.current.forEach((d) => d.dispose());
+    disposablesRef.current = [];
+
+    editorRef.current = editorInstance;
     monacoRef.current = monaco;
 
-    // Listen to cursor position changes
-    editor.onDidChangeCursorPosition((e) => {
-      onCursorChange?.(e.position.lineNumber);
-    });
+    disposablesRef.current.push(
+      editorInstance.onDidChangeCursorPosition((e) => {
+        onCursorChangeRef.current?.(e.position.lineNumber);
+      })
+    );
 
-    // Listen to scroll changes for synced preview
-    editor.onDidScrollChange(() => {
-      const scrollTop = editor.getScrollTop();
-      const scrollHeight = editor.getScrollHeight();
-      const clientHeight = editor.getLayoutInfo().height;
-      const maxScroll = Math.max(scrollHeight - clientHeight, 1);
-      const percent = Math.min(Math.max(scrollTop / maxScroll, 0), 1);
-      onScrollRef.current?.(percent);
-    });
+    disposablesRef.current.push(
+      editorInstance.onDidScrollChange(() => {
+        const scrollTop = editorInstance.getScrollTop();
+        const scrollHeight = editorInstance.getScrollHeight();
+        const clientHeight = editorInstance.getLayoutInfo().height;
+        const maxScroll = Math.max(scrollHeight - clientHeight, 1);
+        const percent = Math.min(Math.max(scrollTop / maxScroll, 0), 1);
+        onScrollRef.current?.(percent);
+      })
+    );
 
-    editor.focus();
+    editorInstance.focus();
+    onFindHandlersReady?.(getFindHandlers());
   };
 
-  // Navigate to a specific line when scrollToLine changes
   useEffect(() => {
-    if (scrollToLine && editorRef.current) {
-      const editor = editorRef.current;
-      editor.revealLineInCenter(scrollToLine);
-      editor.setPosition({ lineNumber: scrollToLine, column: 1 });
-      editor.focus();
-    }
+    return () => {
+      disposablesRef.current.forEach((d) => d.dispose());
+      disposablesRef.current = [];
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!scrollToLine || !editorRef.current) return;
+    if (lastNavTokenRef.current === scrollToLine.token) return;
+    lastNavTokenRef.current = scrollToLine.token;
+
+    const editorInstance = editorRef.current;
+    const line = Math.max(1, scrollToLine.line);
+    editorInstance.revealLineInCenter(line);
+    editorInstance.setPosition({ lineNumber: line, column: 1 });
+    editorInstance.focus();
   }, [scrollToLine]);
 
   const handleChange = useCallback(
@@ -94,9 +241,8 @@ const EditorPane: React.FC<EditorPaneProps> = ({
         value={content}
         onChange={handleChange}
         onMount={handleEditorMount}
-        theme="any-editor-tech"
+        theme={colorTheme === 'dark' ? 'any-editor-dark' : 'any-editor-tech'}
         beforeMount={(monaco) => {
-          // Define custom theme
           monaco.editor.defineTheme('any-editor-tech', {
             base: 'vs',
             inherit: true,
@@ -122,9 +268,35 @@ const EditorPane: React.FC<EditorPaneProps> = ({
               'minimap.background': '#FBFCFD',
             },
           });
+          monaco.editor.defineTheme('any-editor-dark', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [
+              { token: 'comment', foreground: '7C8693', fontStyle: 'italic' },
+              { token: 'keyword', foreground: 'FFB46B', fontStyle: 'bold' },
+              { token: 'string', foreground: '9EDDB6' },
+              { token: 'number', foreground: '8EB8D8' },
+              { token: 'type', foreground: 'F1953F', fontStyle: 'bold' },
+              { token: 'function', foreground: 'E8EDF2' },
+            ],
+            colors: {
+              'editor.background': '#1F242B',
+              'editor.foreground': '#E8EDF2',
+              'editor.lineHighlightBackground': '#2A313A',
+              'editor.selectionBackground': '#3A2C1D',
+              'editorCursor.foreground': '#FFB46B',
+              'editorLineNumber.foreground': '#7C8693',
+              'editorLineNumber.activeForeground': '#FFB46B',
+              'editorGutter.background': '#1B2026',
+              'editorIndentGuide.background1': '#313944',
+              'editorIndentGuide.activeBackground1': '#F1953F',
+              'minimap.background': '#1B2026',
+            },
+          });
         }}
         options={{
-          fontSize: 14,
+          fontSize,
+          readOnly,
           fontFamily: "'Cascadia Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
           lineNumbers: 'on',
           minimap: { enabled: true, scale: 0.8 },
@@ -137,10 +309,15 @@ const EditorPane: React.FC<EditorPaneProps> = ({
           formatOnPaste: true,
           smoothScrolling: true,
           padding: { top: 14, bottom: 14 },
+          find: {
+            addExtraSpaceOnTop: false,
+            autoFindInSelection: 'never',
+            seedSearchStringFromSelection: 'never',
+          },
         }}
       />
     </div>
   );
-};
+});
 
 export default EditorPane;

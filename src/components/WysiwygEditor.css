@@ -246,10 +246,41 @@
   text-align: center;
 }
 
-/* Raw HTML blocks */
+/* Raw HTML blocks — rendered effect, not source dump */
 .wysiwyg-content .md-raw-html {
   min-height: auto;
-  margin-bottom: 8px;
+  margin: 10px 0;
+}
+
+.wysiwyg-content .md-raw-html details {
+  border: 1px solid var(--app-line);
+  border-radius: var(--app-radius-sm);
+  padding: 10px 14px;
+  background: var(--app-surface-soft);
+}
+
+.wysiwyg-content .md-raw-html summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--app-orange-strong);
+}
+
+.wysiwyg-content .md-raw-html kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--app-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--app-surface-muted);
+  font-family: 'Cascadia Mono', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+.wysiwyg-content .md-raw-html mark {
+  background: rgba(255, 180, 107, 0.35);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 3px;
 }
 
 /* ===== Selection ===== */

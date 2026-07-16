@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getCurrentWindow, type Window } from '@tauri-apps/api/window';
 import './TitleBar.css';
 
@@ -23,6 +23,10 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
     return `${documentTitle} · Any Editor`;
   }, [fileName, isModified]);
 
+  useEffect(() => {
+    document.title = windowTitle;
+  }, [windowTitle]);
+
   const syncMaximized = useCallback(async () => {
     const appWindow = getAppWindow();
     if (!appWindow) return;
@@ -33,6 +37,48 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
       setIsMaximized(false);
     }
   }, []);
+
+  useEffect(() => {
+    const appWindow = getAppWindow();
+    if (!appWindow) return;
+
+    let unlistenResize: (() => void) | undefined;
+    let unlistenFocus: (() => void) | undefined;
+    let active = true;
+
+    // Initial sync is async external state (window manager), not React render state.
+    void appWindow.isMaximized()
+      .then((value) => {
+        if (active) setIsMaximized(value);
+      })
+      .catch(() => {
+        if (active) setIsMaximized(false);
+      });
+
+    void appWindow
+      .onResized(() => {
+        void syncMaximized();
+      })
+      .then((fn) => {
+        unlistenResize = fn;
+      })
+      .catch(() => undefined);
+
+    void appWindow
+      .onFocusChanged(() => {
+        void syncMaximized();
+      })
+      .then((fn) => {
+        unlistenFocus = fn;
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+      unlistenResize?.();
+      unlistenFocus?.();
+    };
+  }, [syncMaximized]);
 
   const handleDrag = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const appWindow = getAppWindow();
@@ -59,6 +105,7 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
   }, []);
 
   const handleClose = useCallback(() => {
+    // Prefer close() so App's onCloseRequested guard can run
     const appWindow = getAppWindow();
     void appWindow?.close().catch(() => undefined);
   }, []);
@@ -68,7 +115,9 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
       <div
         className="title-drag-region"
         onMouseDown={handleDrag}
-        onDoubleClick={handleToggleMaximize}
+        onDoubleClick={() => {
+          void handleToggleMaximize();
+        }}
         role="presentation"
       >
         <div className="title-brand" aria-label="Any Editor">
@@ -88,7 +137,14 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
         <button type="button" className="window-control" onClick={handleMinimize} aria-label="最小化">
           _
         </button>
-        <button type="button" className="window-control" onClick={handleToggleMaximize} aria-label={isMaximized ? '还原' : '最大化'}>
+        <button
+          type="button"
+          className="window-control"
+          onClick={() => {
+            void handleToggleMaximize();
+          }}
+          aria-label={isMaximized ? '还原' : '最大化'}
+        >
           {isMaximized ? '▣' : '□'}
         </button>
         <button type="button" className="window-control close" onClick={handleClose} aria-label="关闭">

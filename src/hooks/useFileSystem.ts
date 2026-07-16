@@ -12,6 +12,10 @@ export function useFileSystem() {
   }, []);
 
   const readDir = useCallback(async (path: string): Promise<FileEntry[]> => {
+    return invoke<FileEntry[]>('read_dir', { path });
+  }, []);
+
+  const readDirRecursive = useCallback(async (path: string): Promise<FileEntry[]> => {
     return invoke<FileEntry[]>('read_dir_recursive', { path });
   }, []);
 
@@ -19,9 +23,21 @@ export function useFileSystem() {
     return invoke<boolean>('file_exists', { path });
   }, []);
 
+  const isDirectory = useCallback(async (path: string): Promise<boolean> => {
+    return invoke<boolean>('is_directory', { path });
+  }, []);
+
   const readFileBytes = useCallback(async (path: string): Promise<number[]> => {
     return invoke<number[]>('read_file_bytes', { path });
   }, []);
 
-  return { readFile, writeFile, readDir, fileExists, readFileBytes };
+  return {
+    readFile,
+    writeFile,
+    readDir,
+    readDirRecursive,
+    fileExists,
+    isDirectory,
+    readFileBytes,
+  };
 }

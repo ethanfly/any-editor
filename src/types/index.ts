@@ -10,6 +10,7 @@ export interface FileContent {
   path: string;
   content: string;
   extension: string;
+  encoding?: string;
 }
 
 export interface OpenTab {
@@ -19,6 +20,11 @@ export interface OpenTab {
   content: string;
   isModified: boolean;
   isBinary: boolean;
+  encoding?: string;
+  /** True for buffers not yet written to disk */
+  isUntitled?: boolean;
+  /** Large-file safety: block edits */
+  isReadonly?: boolean;
 }
 
 export interface OutlineItem {
@@ -26,6 +32,14 @@ export interface OutlineItem {
   text: string;
   line: number;
   id: string;
+}
+
+export interface HistoryEntry {
+  id: string;
+  path: string;
+  saved_at: number;
+  preview: string;
+  size: number;
 }
 
 export type ViewMode = 'code' | 'preview' | 'split' | 'wysiwyg';
@@ -49,3 +63,5 @@ export const BINARY_EXTENSIONS = new Set([
   'rar', '7z', 'exe', 'dll', 'so', 'dylib', 'ttf', 'otf', 'woff',
   'woff2', 'eot', 'db', 'sqlite', 'bin', 'dat', 'class', 'o', 'obj',
 ]);
+
+export type ScrollToLine = { line: number; token: number } | null;

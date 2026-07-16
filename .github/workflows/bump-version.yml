@@ -51,17 +51,15 @@ jobs:
             let t=fs.readFileSync('./src-tauri/Cargo.toml','utf8');
             t=t.replace(/^version = \".*\"/m,'version = \"$NEW\"');
             fs.writeFileSync('./src-tauri/Cargo.toml',t);
+            const pkg=JSON.parse(fs.readFileSync('./package.json','utf8'));
+            pkg.version='$NEW';
+            fs.writeFileSync('./package.json',JSON.stringify(pkg,null,2)+'\n');
           "
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git add src-tauri/tauri.conf.json src-tauri/Cargo.toml package.json
           git commit -m "chore: bump to v${NEW} [skip ci]"
           git tag -a "v${NEW}" -m "v${NEW}"
           git push origin main --tags
 
-      - name: Trigger build workflow
-        run: |
-          gh workflow run build.yml --ref main -f version="${{ steps.do-bump.outputs.version }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

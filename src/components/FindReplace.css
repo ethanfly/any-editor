@@ -1,0 +1,91 @@
+.find-replace {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  z-index: 20;
+  width: min(420px, calc(100% - 24px));
+  padding: 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--app-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.find-replace-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.find-replace-row:last-child {
+  margin-bottom: 0;
+}
+
+.find-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-surface-soft);
+  color: var(--app-text);
+  outline: none;
+}
+
+.find-input:focus {
+  border-color: var(--app-orange);
+  box-shadow: 0 0 0 3px rgba(241, 149, 63, 0.15);
+}
+
+.find-btn {
+  height: 32px;
+  min-width: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--app-surface-muted);
+  color: var(--app-text-soft);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.find-btn:hover {
+  background: #fff;
+  border-color: var(--app-line);
+  color: var(--app-text);
+}
+
+.find-btn.text {
+  min-width: auto;
+  font-size: 12px;
+}
+
+.find-btn.ghost {
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.find-replace-row.options {
+  justify-content: flex-start;
+  gap: 12px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+
+.find-replace-row.options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.find-status {
+  margin-left: auto;
+  color: var(--app-green-strong);
+  font-weight: 600;
+}
