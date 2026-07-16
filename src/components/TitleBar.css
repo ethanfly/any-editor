@@ -3,8 +3,8 @@
   align-items: stretch;
   height: 42px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.78);
-  border-bottom: 1px solid rgba(233, 237, 241, 0.86);
+  background: var(--app-chrome);
+  border-bottom: 1px solid var(--app-line);
   color: var(--app-text);
   user-select: none;
   backdrop-filter: blur(18px);
@@ -37,7 +37,7 @@
   border-radius: 9px;
   background: transparent;
   color: #ffffff;
-  font-size: 10px;
+  font-size: 0.7692rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   overflow: hidden;
@@ -51,7 +51,7 @@
 
 .title-name {
   color: var(--app-text);
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 760;
   letter-spacing: 0.4px;
   white-space: nowrap;
@@ -59,12 +59,32 @@
 
 .title-document {
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
   text-align: center;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.title-document-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-autosave-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--app-green-soft);
+  color: var(--app-green-strong);
+  font-size: 0.7692rem;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .title-leds {
@@ -103,7 +123,7 @@
   color: var(--app-text-muted);
   cursor: pointer;
   font: inherit;
-  font-size: 14px;
+  font-size: 1.0769rem;
   font-weight: 700;
   line-height: 1;
   transition: background 140ms ease, color 140ms ease;

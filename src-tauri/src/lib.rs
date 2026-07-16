@@ -406,9 +406,9 @@ fn read_dir_entries(
                 Ok(children) => Some(children),
                 Err(_) => Some(Vec::new()),
             }
-        } else if is_dir {
-            Some(Vec::new())
         } else {
+            // Non-recursive listings leave children unloaded (null),
+            // so the frontend knows it still needs to fetch on expand.
             None
         };
 

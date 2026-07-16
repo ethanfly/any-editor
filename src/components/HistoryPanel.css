@@ -27,13 +27,13 @@
 
 .history-header h2 {
   margin: 0 0 4px;
-  font-size: 16px;
+  font-size: 1.2308rem;
 }
 
 .history-path {
   margin: 0;
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
   word-break: break-all;
 }
 
@@ -43,7 +43,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  font-size: 20px;
+  font-size: 1.5385rem;
   color: var(--app-text-muted);
   cursor: pointer;
 }
@@ -58,7 +58,7 @@
   padding: 24px 12px;
   color: var(--app-text-muted);
   text-align: center;
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .history-item {
@@ -75,13 +75,13 @@
   gap: 8px;
   margin-bottom: 6px;
   color: var(--app-text-soft);
-  font-size: 12px;
+  font-size: 0.9231rem;
 }
 
 .history-preview {
   margin: 0 0 10px;
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -101,5 +101,5 @@
 }
 
 .history-restore:hover {
-  background: #ffe8cd;
+  background: var(--app-orange-soft);
 }

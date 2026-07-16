@@ -55,6 +55,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, settings, onChange,
           </label>
 
           <label className="settings-row">
+            <span>软件界面字号</span>
+            <input
+              type="number"
+              min={11}
+              max={20}
+              value={settings.uiFontSize}
+              onChange={(e) => patch('uiFontSize', Number(e.target.value) || 13)}
+              title="影响顶部菜单、文件树、大纲、标签页、状态栏等，不影响中间编辑器"
+            />
+          </label>
+
+          <label className="settings-row">
             <span>Markdown 默认视图</span>
             <select
               value={settings.defaultMarkdownView}

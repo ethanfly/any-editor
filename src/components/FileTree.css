@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--app-chrome);
   border: 1px solid var(--app-line);
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow-sm);
@@ -16,23 +16,33 @@
   gap: 6px;
   padding: 10px 10px 10px 12px;
   flex-shrink: 0;
-  background: #ffffff;
+  background: var(--app-chrome-strong);
   border-bottom: 1px solid var(--app-line);
   color: var(--app-text);
   font-weight: 760;
-  font-size: 13px;
+  font-size: 1rem;
+  min-width: 0;
 }
 
 .file-tree-title {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 48px;
+  max-width: 100%;
   overflow: hidden;
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--app-text-soft);
   letter-spacing: 0.2px;
+}
+
+.file-tree-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .icon-button {
@@ -41,16 +51,17 @@
   gap: 5px;
   min-width: unset;
   height: 26px;
-  padding: 0 10px;
+  padding: 0 8px;
   background: var(--app-surface-muted);
   border: 1px solid transparent;
   border-radius: 8px;
   color: var(--app-text-soft);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 0.8462rem;
   font-weight: 660;
   line-height: 1;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
@@ -64,7 +75,7 @@
 
 .icon-button:hover {
   transform: translateY(-1px);
-  background: #ffffff;
+  background: var(--app-hover);
   border-color: rgba(241, 149, 63, 0.22);
   color: var(--app-orange-strong);
   box-shadow: 0 8px 18px rgba(31, 41, 55, 0.06);
@@ -88,7 +99,7 @@
 }
 
 .file-tree-node {
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .file-tree-item {
@@ -107,7 +118,7 @@
 
 .file-tree-item:hover,
 .file-tree-item.file-item:hover {
-  background: #ffffff;
+  background: var(--app-chrome-strong);
   color: var(--app-text);
   transform: translateX(1px);
 }
@@ -128,7 +139,7 @@
   border-radius: 7px;
   background: var(--app-orange-soft);
   color: var(--app-orange-strong);
-  font-size: 9px;
+  font-size: 0.6923rem;
   font-weight: 800;
   letter-spacing: -0.2px;
 }
@@ -220,7 +231,7 @@
   min-height: 190px;
   padding: 38px 20px;
   color: var(--app-text-muted);
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.8;
   text-align: center;
   gap: 14px;
@@ -233,7 +244,7 @@
   border-radius: 999px;
   color: #ffffff;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 700;
   box-shadow: 0 10px 24px rgba(241, 149, 63, 0.22);
   transition: transform 140ms ease, box-shadow 140ms ease;
@@ -253,7 +264,7 @@
 .file-tree-status {
   padding: 4px 10px;
   color: var(--app-text-muted);
-  font-size: 11px;
+  font-size: 0.8462rem;
   border-bottom: 1px solid var(--app-line);
 }
 
@@ -279,7 +290,7 @@
   border-radius: 8px;
   color: var(--app-text);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 600;
 }
 

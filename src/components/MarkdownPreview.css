@@ -61,7 +61,7 @@
 .markdown-body code {
   padding: 3px 7px;
   border-radius: 6px;
-  background: #f3f4f6;
+  background: var(--app-code-bg);
   color: #db5f42;
   font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   font-size: 13px;
@@ -86,7 +86,7 @@
 .markdown-body blockquote {
   margin: 20px 0;
   padding: 14px 20px;
-  background: #f9fafb;
+  background: var(--app-quote-bg);
   border-left: 4px solid #f1953f;
   border-radius: 0 8px 8px 0;
   color: #5e6673;
@@ -128,7 +128,7 @@
 }
 
 .markdown-body tr:nth-child(even) {
-  background: #fbfcfd;
+  background: var(--app-surface-soft);
 }
 
 .markdown-body img {

@@ -32,8 +32,6 @@ interface ToolbarProps {
   onSettings?: () => void;
   canSave: boolean;
   canFormat?: boolean;
-  fileName: string | null;
-  isModified: boolean;
   isMarkdown: boolean;
   fileTreeVisible: boolean;
   onToggleFileTree: () => void;
@@ -41,7 +39,6 @@ interface ToolbarProps {
   onToggleOutline: () => void;
   hasFileTree: boolean;
   hasOutline: boolean;
-  autoSaveEnabled?: boolean;
 }
 
 type MenuKey = 'file' | 'format' | 'edit' | 'export' | 'more' | null;
@@ -149,8 +146,6 @@ const Toolbar: FC<ToolbarProps> = ({
   onSettings,
   canSave,
   canFormat = true,
-  fileName,
-  isModified,
   isMarkdown,
   fileTreeVisible,
   onToggleFileTree,
@@ -158,7 +153,6 @@ const Toolbar: FC<ToolbarProps> = ({
   onToggleOutline,
   hasFileTree,
   hasOutline,
-  autoSaveEnabled,
 }) => {
   const [menu, setMenu] = useState<MenuKey>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -258,7 +252,8 @@ const Toolbar: FC<ToolbarProps> = ({
 
   return (
     <div className="toolbar" ref={rootRef}>
-      <div className="toolbar-left">
+      <div className="toolbar-row toolbar-row-main">
+        <div className="toolbar-left">
         {hasFileTree && (
           <button
             className={`toolbar-btn toolbar-btn-icon ${fileTreeVisible ? 'active' : ''}`}
@@ -395,71 +390,50 @@ const Toolbar: FC<ToolbarProps> = ({
         />
       </div>
 
-      <div className="toolbar-center">
-        {isMarkdown ? (
-          <div className="toolbar-view-modes" role="tablist" aria-label="Markdown 视图">
-            {VIEW_MODES.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                role="tab"
-                aria-selected={viewMode === mode.id}
-                className={`view-mode-btn ${viewMode === mode.id ? 'active' : ''}`}
-                onClick={() => onViewModeChange(mode.id)}
-                title={mode.title}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="toolbar-view-placeholder">编辑器</div>
-        )}
+        <div className="toolbar-right">
+          {isMarkdown && (
+            <div className="toolbar-view-modes" role="tablist" aria-label="Markdown 视图">
+              {VIEW_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === mode.id}
+                  className={`view-mode-btn ${viewMode === mode.id ? 'active' : ''}`}
+                  onClick={() => onViewModeChange(mode.id)}
+                  title={mode.title}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-        <div className="toolbar-file-meta">
-          {fileName ? (
-            <>
-              <span className="toolbar-file-info">
-                {isModified && <span className="modified-dot">●</span>}
-                <span className="toolbar-file-name" title={fileName}>
-                  {fileName}
-                </span>
-              </span>
-              <div className="toolbar-file-flags">
-                {autoSaveEnabled && <span className="autosave-badge">自动保存</span>}
-                {focusMode && <span className="focus-badge">专注</span>}
-              </div>
-            </>
-          ) : (
-            <span className="toolbar-file-empty">未打开文件</span>
+          {hasOutline && (
+            <button
+              className={`toolbar-btn toolbar-btn-icon ${outlineVisible ? 'active' : ''}`}
+              onClick={onToggleOutline}
+              title={outlineVisible ? '隐藏大纲' : '显示大纲'}
+              type="button"
+            >
+              大纲
+            </button>
+          )}
+          {onSettings && (
+            <button
+              className="toolbar-btn toolbar-btn-icon"
+              onClick={onSettings}
+              title="设置"
+              type="button"
+            >
+              设置
+            </button>
           )}
         </div>
-      </div>
-
-      <div className="toolbar-right">
-        {hasOutline && (
-          <button
-            className={`toolbar-btn toolbar-btn-icon ${outlineVisible ? 'active' : ''}`}
-            onClick={onToggleOutline}
-            title={outlineVisible ? '隐藏大纲' : '显示大纲'}
-            type="button"
-          >
-            大纲
-          </button>
-        )}
-        {onSettings && (
-          <button
-            className="toolbar-btn toolbar-btn-icon"
-            onClick={onSettings}
-            title="设置"
-            type="button"
-          >
-            设置
-          </button>
-        )}
       </div>
     </div>
   );
 };
+
 
 export default Toolbar;

@@ -21,7 +21,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  font-size: 18px;
+  font-size: 1.3846rem;
   color: var(--app-text-muted);
   cursor: pointer;
 }
@@ -48,7 +48,7 @@
   align-items: center;
   gap: 4px;
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
 }
 
 .search-run {
@@ -72,7 +72,7 @@
   padding: 20px 10px;
   text-align: center;
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
 }
 
 .search-item {
@@ -89,14 +89,14 @@
 
 .search-item:hover {
   border-color: var(--app-line);
-  background: #fff;
+  background: var(--app-chrome-strong);
 }
 
 .search-item-meta {
   display: flex;
   gap: 2px;
   margin-bottom: 2px;
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 700;
   color: var(--app-text);
 }
@@ -107,7 +107,7 @@
 
 .search-item-preview {
   color: var(--app-text-muted);
-  font-size: 11px;
+  font-size: 0.8462rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

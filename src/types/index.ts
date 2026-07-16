@@ -57,8 +57,12 @@ export const TEXT_EXTENSIONS = new Set([
 
 export const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown', 'mdown', 'mkd']);
 
+export const IMAGE_EXTENSIONS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'svg', 'webp', 'avif', 'tif', 'tiff',
+]);
+
 export const BINARY_EXTENSIONS = new Set([
-  'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'svg', 'webp',
+  'pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'svg', 'webp', 'avif', 'tif', 'tiff',
   'mp3', 'wav', 'ogg', 'mp4', 'avi', 'mov', 'zip', 'tar', 'gz',
   'rar', '7z', 'exe', 'dll', 'so', 'dylib', 'ttf', 'otf', 'woff',
   'woff2', 'eot', 'db', 'sqlite', 'bin', 'dat', 'class', 'o', 'obj',

@@ -1,0 +1,112 @@
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--app-surface-soft);
+}
+
+.image-preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--app-line);
+  background: var(--app-surface);
+}
+
+.image-preview-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--app-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.image-preview-meta {
+  color: var(--app-text-muted);
+  font-size: 0.9231rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.image-preview-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.image-preview-btn {
+  height: 28px;
+  min-width: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--app-surface-muted);
+  color: var(--app-text-soft);
+  cursor: pointer;
+  font-size: 0.9231rem;
+  font-weight: 700;
+}
+
+.image-preview-btn:hover {
+  background: var(--app-surface);
+  border-color: var(--app-line);
+  color: var(--app-text);
+}
+
+.image-preview-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+  background:
+    linear-gradient(45deg, var(--app-surface-muted) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--app-surface-muted) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--app-surface-muted) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--app-surface-muted) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-color: var(--app-surface-soft);
+}
+
+.image-preview-stage img {
+  max-width: min(100%, 1200px);
+  max-height: calc(100% - 8px);
+  object-fit: contain;
+  transform-origin: center center;
+  border-radius: 12px;
+  box-shadow: var(--app-shadow);
+  background: var(--app-surface);
+  transition: transform 120ms ease;
+  user-select: none;
+}
+
+.image-preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  color: var(--app-text-muted);
+  text-align: center;
+  padding: 24px;
+}
+
+.image-preview-error code {
+  max-width: 80%;
+  word-break: break-all;
+  color: var(--app-text-soft);
+  font-size: 0.9231rem;
+}

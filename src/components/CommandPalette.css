@@ -28,7 +28,7 @@
   border-bottom: 1px solid var(--app-line);
   background: transparent;
   color: var(--app-text);
-  font-size: 15px;
+  font-size: 1.1538rem;
   outline: none;
 }
 
@@ -41,7 +41,7 @@
   padding: 24px;
   text-align: center;
   color: var(--app-text-muted);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .palette-item {
@@ -66,12 +66,12 @@
 
 .palette-name {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .palette-path {
   color: var(--app-text-muted);
-  font-size: 11px;
+  font-size: 0.8462rem;
   word-break: break-all;
 }
 
@@ -79,5 +79,5 @@
   padding: 8px 12px;
   border-top: 1px solid var(--app-line);
   color: var(--app-text-muted);
-  font-size: 11px;
+  font-size: 0.8462rem;
 }

@@ -30,7 +30,7 @@
 
 .shortcuts-header h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 1.2308rem;
 }
 
 .shortcuts-close {
@@ -39,7 +39,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  font-size: 20px;
+  font-size: 1.5385rem;
   color: var(--app-text-muted);
   cursor: pointer;
 }
@@ -55,7 +55,7 @@
 .shortcuts-group h3 {
   margin: 0 0 8px;
   color: var(--app-orange-strong);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .shortcuts-group ul {
@@ -76,7 +76,7 @@
   border-radius: 10px;
   background: var(--app-surface-soft);
   color: var(--app-text-soft);
-  font-size: 12px;
+  font-size: 0.9231rem;
 }
 
 .shortcuts-group kbd {
@@ -84,10 +84,10 @@
   border: 1px solid var(--app-line);
   border-bottom-width: 2px;
   border-radius: 6px;
-  background: #fff;
+  background: var(--app-chrome-strong);
   color: var(--app-text);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11px;
+  font-size: 0.8462rem;
   white-space: nowrap;
 }
 
@@ -95,7 +95,7 @@
   padding: 10px 16px 14px;
   border-top: 1px solid var(--app-line);
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
 }
 
 @media (max-width: 720px) {

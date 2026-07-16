@@ -2,13 +2,13 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--app-surface);
 }
 
 .editor-pane .monaco-editor,
 .editor-pane .monaco-editor-background,
 .editor-pane .margin {
-  background: #ffffff !important;
+  background: var(--app-surface) !important;
 }
 
 .editor-pane .monaco-editor {
@@ -17,5 +17,5 @@
 
 .editor-pane .monaco-scrollable-element > .scrollbar > .slider {
   border-radius: 999px !important;
-  background: #d4dbe2 !important;
+  background: var(--app-scrollbar) !important;
 }

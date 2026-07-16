@@ -28,7 +28,7 @@
 
 .settings-header h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 1.2308rem;
   color: var(--app-text);
 }
 
@@ -38,7 +38,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  font-size: 20px;
+  font-size: 1.5385rem;
   color: var(--app-text-muted);
   cursor: pointer;
 }
@@ -61,7 +61,7 @@
   justify-content: space-between;
   gap: 12px;
   color: var(--app-text-soft);
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 600;
 }
 

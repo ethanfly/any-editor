@@ -4,6 +4,8 @@ export type DefaultViewMode = 'wysiwyg' | 'code' | 'preview' | 'split';
 export interface AppSettings {
   theme: ThemeMode;
   fontSize: number;
+  /** UI/menu chrome font size (toolbar, tree, tabs, settings) */
+  uiFontSize: number;
   autoSave: boolean;
   autoSaveIntervalMs: number;
   historyEnabled: boolean;
@@ -14,6 +16,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   fontSize: 14,
+  uiFontSize: 13,
   autoSave: true,
   autoSaveIntervalMs: 2000,
   historyEnabled: true,

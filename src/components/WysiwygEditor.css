@@ -126,7 +126,7 @@
 .wysiwyg-content .md-blockquote {
   margin: 14px 0;
   padding: 10px 18px;
-  background: #f9fafb;
+  background: var(--app-quote-bg);
   border-left: 4px solid var(--app-orange-strong);
   border-radius: 0 8px 8px 0;
   color: var(--app-text-soft);
@@ -176,7 +176,7 @@
 }
 
 .wysiwyg-content .md-highlight {
-  background: #fef3c7;
+  background: var(--app-orange-soft);
   padding: 1px 4px;
   border-radius: 3px;
 }
@@ -184,7 +184,7 @@
 .wysiwyg-content .md-code {
   padding: 2px 6px;
   border-radius: 6px;
-  background: #f3f4f6;
+  background: var(--app-code-bg);
   color: #db5f42;
   font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   font-size: 13px;
@@ -238,7 +238,7 @@
 }
 
 .wysiwyg-content .md-table tr:nth-child(even) {
-  background: #fbfcfd;
+  background: var(--app-surface-soft);
 }
 
 .wysiwyg-content .md-image-block {

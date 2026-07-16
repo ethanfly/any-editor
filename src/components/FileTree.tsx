@@ -43,6 +43,14 @@ function getFileVisualMeta(entry: FileEntry, isExpanded: boolean): FileVisualMet
     html: { kind: 'html', label: 'HTML' },
     css: { kind: 'css', label: 'CSS' },
     txt: { kind: 'text', label: 'Text' },
+    png: { kind: 'image', label: 'Image' },
+    jpg: { kind: 'image', label: 'Image' },
+    jpeg: { kind: 'image', label: 'Image' },
+    gif: { kind: 'image', label: 'Image' },
+    webp: { kind: 'image', label: 'Image' },
+    svg: { kind: 'image', label: 'Image' },
+    bmp: { kind: 'image', label: 'Image' },
+    ico: { kind: 'image', label: 'Image' },
   };
   return extensionMap[ext] || { kind: 'file', label: 'File' };
 }
@@ -79,24 +87,32 @@ const FileTreeNode: React.FC<{
   onFileOpen: (path: string, name?: string) => void;
   onContext: (e: React.MouseEvent, entry: FileEntry) => void;
 }> = ({ entry, depth, onFileOpen, onContext }) => {
-  const [isExpanded, setIsExpanded] = useState(depth < 1);
-  const [children, setChildren] = useState<FileEntry[] | null>(entry.is_dir ? entry.children : null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  // null = not loaded yet; [] = loaded and truly empty
+  const [children, setChildren] = useState<FileEntry[] | null>(
+    entry.is_dir ? (entry.children && entry.children.length > 0 ? entry.children : null) : null
+  );
   const [loadingChildren, setLoadingChildren] = useState(false);
+  const [loaded, setLoaded] = useState(
+    !entry.is_dir || !!(entry.children && entry.children.length > 0)
+  );
 
-  const loadChildren = useCallback(async () => {
+  const loadChildren = useCallback(async (force = false) => {
     if (!entry.is_dir) return;
-    if (children && children.length > 0) return;
+    if (!force && loaded) return;
     setLoadingChildren(true);
     try {
       const entries = await invoke<FileEntry[]>('read_dir', { path: entry.path });
       setChildren(entries);
+      setLoaded(true);
     } catch (err) {
       console.error('Failed to load children:', err);
       setChildren([]);
+      setLoaded(true);
     } finally {
       setLoadingChildren(false);
     }
-  }, [children, entry.is_dir, entry.path]);
+  }, [entry.is_dir, entry.path, loaded]);
 
   const handleClick = () => {
     if (entry.is_dir) {
@@ -131,9 +147,14 @@ const FileTreeNode: React.FC<{
         <span className="file-name">{entry.name}</span>
         {loadingChildren && <span className="file-loading-dot">…</span>}
       </div>
-      {entry.is_dir && isExpanded && children && (
+      {entry.is_dir && isExpanded && (
         <div className="file-tree-children" role="group">
-          {children.map((child) => (
+          {loadingChildren && (
+            <div className="file-tree-empty-dir" style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}>
+              加载中…
+            </div>
+          )}
+          {children?.map((child) => (
             <FileTreeNode
               key={child.path}
               entry={child}
@@ -142,7 +163,7 @@ const FileTreeNode: React.FC<{
               onContext={onContext}
             />
           ))}
-          {children.length === 0 && !loadingChildren && (
+          {loaded && !loadingChildren && children && children.length === 0 && (
             <div className="file-tree-empty-dir" style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }}>
               空目录
             </div>
@@ -273,28 +294,30 @@ const FileTree: React.FC<FileTreeProps> = ({
         <span className="file-tree-title" title={rootPath}>
           文件浏览
         </span>
-        <button
-          className="icon-button"
-          onClick={() => void createIn(rootPath, false)}
-          title="新建文件"
-          type="button"
-        >
-          +文件
-        </button>
-        <button
-          className="icon-button"
-          onClick={() => void createIn(rootPath, true)}
-          title="新建文件夹"
-          type="button"
-        >
-          +目录
-        </button>
-        <button className="icon-button" onClick={onRootChange} title="切换目录" type="button">
-          目录
-        </button>
-        <button className="icon-button" onClick={() => void loadTree()} title="刷新" type="button">
-          刷新
-        </button>
+        <div className="file-tree-actions">
+          <button
+            className="icon-button"
+            onClick={() => void createIn(rootPath, false)}
+            title="新建文件"
+            type="button"
+          >
+            +文件
+          </button>
+          <button
+            className="icon-button"
+            onClick={() => void createIn(rootPath, true)}
+            title="新建文件夹"
+            type="button"
+          >
+            +目录
+          </button>
+          <button className="icon-button" onClick={onRootChange} title="切换目录" type="button">
+            目录
+          </button>
+          <button className="icon-button" onClick={() => void loadTree()} title="刷新" type="button">
+            刷新
+          </button>
+        </div>
       </div>
       {status && <div className="file-tree-status">{status}</div>}
       <div className="file-tree-body" role="tree" aria-label="文件树">

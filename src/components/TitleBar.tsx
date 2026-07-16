@@ -5,6 +5,7 @@ import './TitleBar.css';
 interface TitleBarProps {
   fileName: string | null;
   isModified: boolean;
+  autoSaveEnabled?: boolean;
 }
 
 function getAppWindow(): Window | null {
@@ -15,7 +16,7 @@ function getAppWindow(): Window | null {
   }
 }
 
-const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
+const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified, autoSaveEnabled = false }) => {
   const [isMaximized, setIsMaximized] = useState(false);
 
   const windowTitle = useMemo(() => {
@@ -126,7 +127,10 @@ const TitleBar: React.FC<TitleBarProps> = ({ fileName, isModified }) => {
           </span>
           <span className="title-name">ANY EDITOR</span>
         </div>
-        <div className="title-document">{windowTitle}</div>
+        <div className="title-document">
+          <span className="title-document-text">{windowTitle}</span>
+          {autoSaveEnabled && <span className="title-autosave-badge">自动保存</span>}
+        </div>
         <div className="title-leds" aria-hidden="true">
           <span />
           <span />

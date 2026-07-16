@@ -14,7 +14,7 @@
   height: 100%;
   gap: 16px;
   color: var(--app-text-muted);
-  font-size: 13px;
+  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -53,7 +53,7 @@
   gap: 8px;
   padding: 10px 14px;
   flex-shrink: 0;
-  background: #ffffff;
+  background: var(--app-chrome-strong);
   border-bottom: 1px solid var(--app-line);
 }
 
@@ -65,14 +65,14 @@
   border-radius: 10px;
   color: var(--app-text-soft);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 700;
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
 .pdf-toolbar-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #ffffff;
+  background: var(--app-chrome-strong);
   border-color: var(--app-line);
   color: var(--app-text);
   box-shadow: var(--app-shadow-sm);
@@ -95,7 +95,7 @@
   background: var(--app-green-soft);
   border-radius: 999px;
   color: var(--app-green-strong);
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 700;
   text-align: center;
 }
@@ -119,7 +119,7 @@
 }
 
 .pdf-canvas-container canvas {
-  background: #ffffff;
+  background: var(--app-chrome-strong);
   border-radius: 18px;
   box-shadow: var(--app-shadow);
   image-rendering: auto;

@@ -28,6 +28,14 @@
   --app-shadow-sm: 0 8px 24px rgba(31, 41, 55, 0.06);
   --app-radius: 16px;
   --app-radius-sm: 10px;
+  --app-chrome: rgba(255, 255, 255, 0.88);
+  --app-chrome-strong: #ffffff;
+  --app-hover: #ffffff;
+  --app-code-bg: #f3f4f6;
+  --app-quote-bg: #f9fafb;
+  --app-scrollbar: #d4dbe2;
+  --app-scrollbar-hover: #bec8d1;
+  --app-ui-font-size: 13px;
 
   --primary: var(--app-orange-strong);
   --primary-light: var(--app-orange);
@@ -58,7 +66,7 @@ body,
   width: 100%;
   overflow: hidden;
   font-family: 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei UI', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-size: var(--app-ui-font-size, 13px);
   color: var(--app-text);
   background: var(--app-bg);
   -webkit-font-smoothing: antialiased;
@@ -99,12 +107,12 @@ button:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4dbe2;
+  background: var(--app-scrollbar);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #bec8d1;
+  background: var(--app-scrollbar-hover);
 }
 
 .app {
@@ -114,6 +122,7 @@ button:focus-visible {
   width: 100%;
   background: transparent;
   color: var(--app-text);
+  font-size: var(--app-ui-font-size, 13px);
 }
 
 .app-body {
@@ -175,37 +184,38 @@ button:focus-visible {
 
 .welcome-screen {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   height: 100%;
-  padding: 32px;
-  background:
-    linear-gradient(135deg, rgba(255, 244, 231, 0.72), rgba(238, 250, 243, 0.72)),
-    var(--app-surface);
+  min-height: 0;
+  overflow: auto;
+  padding: 24px 20px 32px;
+  background: var(--app-surface-soft);
 }
 
 .welcome-content {
-  width: min(560px, 100%);
-  padding: 42px;
+  width: min(520px, 100%);
+  max-height: none;
+  margin: auto 0;
+  padding: 28px 28px 24px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(233, 237, 241, 0.9);
-  border-radius: 28px;
-  box-shadow: var(--app-shadow);
-  backdrop-filter: blur(18px);
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  border-radius: 22px;
+  box-shadow: var(--app-shadow-sm);
 }
 
 .welcome-logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 74px;
-  height: 74px;
-  margin-bottom: 22px;
-  border-radius: 22px;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: 18px;
   background: transparent;
   color: #ffffff;
-  font-size: 26px;
+  font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -1px;
   overflow: hidden;
@@ -218,44 +228,44 @@ button:focus-visible {
 }
 
 .welcome-content h1 {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--app-text);
-  font-size: 34px;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
   font-weight: 760;
-  letter-spacing: -0.8px;
+  letter-spacing: -0.6px;
 }
 
 .welcome-subtitle {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: var(--app-green-strong);
-  font-size: 15px;
+  font-size: 1rem;
   font-weight: 700;
 }
 
 .welcome-desc {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   color: var(--app-text-soft);
-  font-size: 14px;
-  line-height: 1.8;
+  font-size: 0.95rem;
+  line-height: 1.65;
 }
 
 .welcome-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
 .welcome-btn {
-  min-width: 148px;
-  padding: 11px 20px;
+  min-width: 128px;
+  padding: 10px 16px;
   border: 1px solid transparent;
   border-radius: 999px;
   background: var(--app-surface-muted);
   color: var(--app-text);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.95rem;
   font-weight: 700;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
 }
@@ -294,7 +304,7 @@ button:focus-visible {
   color: var(--app-text-muted);
   background: var(--app-surface-muted);
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 0.8462rem;
 }
 
 .split-view {
@@ -335,7 +345,7 @@ button:focus-visible {
   height: 100%;
   width: 100%;
   padding: 32px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(247, 248, 250, 0.9));
+  background: var(--app-surface-soft);
 }
 
 .binary-placeholder-card {
@@ -365,7 +375,7 @@ button:focus-visible {
 
 .binary-placeholder-card h2 {
   margin-bottom: 8px;
-  font-size: 18px;
+  font-size: 1.3846rem;
   color: var(--app-text);
 }
 
@@ -376,7 +386,7 @@ button:focus-visible {
 
 .binary-path {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 0.9231rem;
   color: var(--app-text-muted);
   word-break: break-all;
 }
@@ -388,10 +398,10 @@ button:focus-visible {
   height: 28px;
   padding: 0 16px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--app-chrome);
   border-top: 1px solid var(--app-line);
   color: var(--app-text-muted);
-  font-size: 11px;
+  font-size: 0.8462rem;
   font-weight: 600;
   letter-spacing: 0.2px;
 }
@@ -438,8 +448,23 @@ html[data-theme="dark"] body {
   --app-green-soft: #1d3228;
   --app-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
   --app-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --app-chrome: rgba(31, 36, 43, 0.94);
+  --app-chrome-strong: #1f242b;
+  --app-hover: #2a313a;
+  --app-code-bg: #2a313a;
+  --app-quote-bg: #242a32;
+  --app-scrollbar: #3d4652;
+  --app-scrollbar-hover: #4a5563;
   color: var(--app-text);
   background: var(--app-bg);
+}
+
+.app[data-theme="dark"] body,
+html[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(241, 149, 63, 0.08), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(85, 185, 129, 0.08), transparent 26%),
+    var(--app-bg);
 }
 
 
@@ -448,28 +473,29 @@ html[data-theme="dark"] body {
   flex-direction: column;
   gap: 6px;
   width: min(420px, 100%);
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
   text-align: left;
 }
 .welcome-recent-title {
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.9231rem;
   font-weight: 700;
   margin-bottom: 2px;
 }
 .welcome-recent-item {
   border: 1px solid var(--app-line);
-  background: var(--app-surface);
+  background: var(--app-surface-muted);
   border-radius: 10px;
   padding: 8px 12px;
   color: var(--app-text-soft);
   cursor: pointer;
   text-align: left;
-  font-size: 13px;
+  font-size: 0.95rem;
 }
 .welcome-recent-item:hover {
   border-color: var(--app-orange);
   color: var(--app-text);
+  background: var(--app-hover);
 }
 
 
@@ -510,7 +536,7 @@ html[data-theme="dark"] body {
   border-radius: 18px;
   background: rgba(255, 244, 231, 0.72);
   color: var(--app-orange-strong);
-  font-size: 18px;
+  font-size: 1.3846rem;
   font-weight: 800;
   pointer-events: none;
 }

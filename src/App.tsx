@@ -13,6 +13,7 @@ import type { EditorPaneHandle } from './components/EditorPane';
 import MarkdownPreview from './components/MarkdownPreview';
 import WysiwygEditor from './components/WysiwygEditor';
 import PDFPreview from './components/PDFPreview';
+import ImagePreview from './components/ImagePreview';
 import Outline from './components/Outline';
 import FindReplace from './components/FindReplace';
 import type { FindReplaceHandlers } from './components/FindReplace';
@@ -21,7 +22,7 @@ import HistoryPanel from './components/HistoryPanel';
 import QuickOpen from './components/QuickOpen';
 import SearchPanel from './components/SearchPanel';
 import type { OpenTab, ViewMode } from './types';
-import { BINARY_EXTENSIONS, MARKDOWN_EXTENSIONS } from './types';
+import { BINARY_EXTENSIONS, IMAGE_EXTENSIONS, MARKDOWN_EXTENSIONS } from './types';
 import { loadSettings, saveSettings, type AppSettings } from './types/settings';
 import { markdownToHtmlDocument } from './utils/exportMarkdown';
 import { applyMarkdownFormat, type FormatAction } from './utils/markdownFormat';
@@ -136,6 +137,7 @@ const App: React.FC = () => {
   useEffect(() => {
     saveSettings(settings);
     document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.style.setProperty('--app-ui-font-size', `${settings.uiFontSize || 13}px`);
   }, [settings]);
 
   // Restore window geometry
@@ -254,6 +256,7 @@ const App: React.FC = () => {
   const activeTab = tabs.find((t) => t.path === activeTabPath) || null;
   const isMarkdown = activeTab ? MARKDOWN_EXTENSIONS.has(activeTab.extension) : false;
   const isPDF = activeTab?.extension === 'pdf';
+  const isImage = !!activeTab && IMAGE_EXTENSIONS.has(activeTab.extension);
   const isCsv = !!activeTab && (activeTab.extension === 'csv' || activeTab.extension === 'tsv');
 
   const persistHistory = useCallback(async (tab: OpenTab) => {
@@ -348,11 +351,15 @@ const App: React.FC = () => {
           content: '',
           isModified: false,
           isBinary: true,
-          encoding: ext === 'pdf' ? 'PDF' : 'Binary',
+          encoding: ext === 'pdf' ? 'PDF' : IMAGE_EXTENSIONS.has(ext) ? 'Image' : 'Binary',
         };
         setTabs((prev) => (prev.some((t) => t.path === filePath) ? prev : [...prev, newTab]));
         setActiveTabPath(filePath);
-        setStatusMessage(ext === 'pdf' ? `已打开: ${name}` : `已打开二进制文件: ${name}`);
+        setStatusMessage(
+          ext === 'pdf' || IMAGE_EXTENSIONS.has(ext)
+            ? `已打开: ${name}`
+            : `已打开二进制文件: ${name}`
+        );
         return;
       }
 
@@ -1224,7 +1231,13 @@ const App: React.FC = () => {
 
   const encodingLabel =
     activeTab?.encoding ||
-    (activeTab?.isBinary ? (activeTab.extension === 'pdf' ? 'PDF' : 'Binary') : 'UTF-8');
+    (activeTab?.isBinary
+      ? activeTab.extension === 'pdf'
+        ? 'PDF'
+        : IMAGE_EXTENSIONS.has(activeTab.extension)
+          ? 'Image'
+          : 'Binary'
+      : 'UTF-8');
 
   const canSave = !!activeTab && !activeTab.isBinary && !activeTab.isReadonly && (activeTab.isModified || !!activeTab.isUntitled);
   const showCodeEditor =
@@ -1263,7 +1276,7 @@ const App: React.FC = () => {
 
     return (
     <div className={`app${focusMode ? ' focus-mode' : ''}${dragActive ? ' drag-active' : ''}`} data-theme={settings.theme}>
-      <TitleBar fileName={activeTab?.name || null} isModified={activeTab?.isModified || false} />
+      <TitleBar fileName={activeTab?.name || null} isModified={activeTab?.isModified || false} autoSaveEnabled={settings.autoSave} />
       <Toolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -1301,8 +1314,6 @@ const App: React.FC = () => {
         onHistory={() => setHistoryOpen(true)}
         onSettings={() => setSettingsOpen(true)}
         canSave={canSave}
-        fileName={activeTab?.name || null}
-        isModified={activeTab?.isModified || false}
         isMarkdown={isMarkdown}
         fileTreeVisible={fileTreeVisible}
         onToggleFileTree={() => setFileTreeVisible(!fileTreeVisible)}
@@ -1310,7 +1321,6 @@ const App: React.FC = () => {
         onToggleOutline={() => setOutlineVisible(!outlineVisible)}
         hasFileTree={!!rootPath}
         hasOutline={outlineHasContent}
-        autoSaveEnabled={settings.autoSave}
       />
 
       <div className="app-body">
@@ -1410,7 +1420,11 @@ const App: React.FC = () => {
 
             {activeTab && isPDF && <PDFPreview filePath={activeTab.path} />}
 
-            {activeTab && activeTab.isBinary && !isPDF && (
+            {activeTab && isImage && !isPDF && (
+              <ImagePreview filePath={activeTab.path} fileName={activeTab.name} />
+            )}
+
+            {activeTab && activeTab.isBinary && !isPDF && !isImage && (
               <div className="binary-placeholder">
                 <div className="binary-placeholder-card">
                   <div className="binary-icon">BIN</div>
