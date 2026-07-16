@@ -26,6 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Need a token that can push commits/tags and trigger follow-up workflows.
+          # Default GITHUB_TOKEN push events do not start new workflows.
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump version
@@ -59,7 +61,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src-tauri/tauri.conf.json src-tauri/Cargo.toml package.json
+          # [skip ci] prevents this bump commit from re-triggering Bump Version.
+          # Build is started explicitly below via workflow_call (tag push alone is
+          # also skipped when the accompanying commit message contains [skip ci]).
           git commit -m "chore: bump to v${NEW} [skip ci]"
           git tag -a "v${NEW}" -m "v${NEW}"
-          git push origin main --tags
+          git push origin HEAD:main --tags
 
+  # Explicitly invoke Build & Release after bump.
+  # Do NOT rely on tag push events: pushing a [skip ci] commit + tag in one push
+  # causes GitHub to skip ALL workflows for that push, including tag-triggered builds.
+  build-release:
+    needs: bump
+    if: needs.bump.outputs.version != ''
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.bump.outputs.version }}
+    secrets: inherit
