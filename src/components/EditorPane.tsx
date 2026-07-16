@@ -22,6 +22,9 @@ interface EditorPaneProps {
 export interface EditorPaneHandle {
   focus: () => void;
   getFindHandlers: () => FindReplaceHandlers | null;
+  getSelectionOffsets: () => { start: number; end: number } | null;
+  applyTextEdit: (content: string, selection: { start: number; end: number }) => void;
+  formatDocument: () => Promise<boolean>;
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
@@ -166,8 +169,64 @@ const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function Editor
     () => ({
       focus: () => editorRef.current?.focus(),
       getFindHandlers,
+      getSelectionOffsets: () => {
+        const ed = editorRef.current;
+        const model = ed?.getModel();
+        if (!ed || !model) return null;
+        const sel = ed.getSelection();
+        if (!sel) {
+          const pos = ed.getPosition();
+          if (!pos) return null;
+          const offset = model.getOffsetAt(pos);
+          return { start: offset, end: offset };
+        }
+        const start = model.getOffsetAt(sel.getStartPosition());
+        const end = model.getOffsetAt(sel.getEndPosition());
+        return { start, end };
+      },
+      applyTextEdit: (nextContent, selection) => {
+        const ed = editorRef.current;
+        const model = ed?.getModel();
+        if (!ed || !model) return;
+        const fullRange = model.getFullModelRange();
+        ed.pushUndoStop();
+        ed.executeEdits('any-editor-format', [
+          {
+            range: fullRange,
+            text: nextContent,
+            forceMoveMarkers: true,
+          },
+        ]);
+        ed.pushUndoStop();
+        const startPos = model.getPositionAt(
+          Math.max(0, Math.min(selection.start, nextContent.length))
+        );
+        const endPos = model.getPositionAt(
+          Math.max(0, Math.min(selection.end, nextContent.length))
+        );
+        ed.setSelection({
+          startLineNumber: startPos.lineNumber,
+          startColumn: startPos.column,
+          endLineNumber: endPos.lineNumber,
+          endColumn: endPos.column,
+        });
+        ed.focus();
+        onContentChange(nextContent);
+      },
+      formatDocument: async () => {
+        const ed = editorRef.current;
+        if (!ed) return false;
+        const action = ed.getAction('editor.action.formatDocument');
+        if (!action) return false;
+        try {
+          await action.run();
+          return true;
+        } catch {
+          return false;
+        }
+      },
     }),
-    [getFindHandlers]
+    [getFindHandlers, onContentChange]
   );
 
   useEffect(() => {

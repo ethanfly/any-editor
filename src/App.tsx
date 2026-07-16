@@ -9,6 +9,7 @@ import TabBar from './components/TabBar';
 import TitleBar from './components/TitleBar';
 import Toolbar from './components/Toolbar';
 import EditorPane from './components/EditorPane';
+import type { EditorPaneHandle } from './components/EditorPane';
 import MarkdownPreview from './components/MarkdownPreview';
 import WysiwygEditor from './components/WysiwygEditor';
 import PDFPreview from './components/PDFPreview';
@@ -22,10 +23,12 @@ import SearchPanel from './components/SearchPanel';
 import type { OpenTab, ViewMode } from './types';
 import { BINARY_EXTENSIONS, MARKDOWN_EXTENSIONS } from './types';
 import { loadSettings, saveSettings, type AppSettings } from './types/settings';
-import { loadWorkspace, saveWorkspace, pushRecentFile } from './utils/workspace';
-import { markdownToHtmlDocument, SAMPLE_TABLE } from './utils/exportMarkdown';
+import { markdownToHtmlDocument } from './utils/exportMarkdown';
+import { applyMarkdownFormat, type FormatAction } from './utils/markdownFormat';
+import { formatJsonDocument, minifyJsonDocument } from './utils/jsonFormat';
 import { computeTextStats } from './utils/textStats';
 import { loadWindowGeometry, saveWindowGeometry } from './utils/windowState';
+import { loadWorkspace, saveWorkspace, pushRecentFile } from './utils/workspace';
 import DiffPanel from './components/DiffPanel';
 import CsvTableView from './components/CsvTableView';
 import ShortcutsHelp from './components/ShortcutsHelp';
@@ -119,6 +122,7 @@ const App: React.FC = () => {
   const settingsRef = useRef(settings);
   const openFileRef = useRef<(filePath: string) => Promise<void>>(async () => undefined);
   const untitledCounter = useRef(1);
+  const editorPaneRef = useRef<EditorPaneHandle | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diskMtimeRef = useRef<Record<string, number>>({});
 
@@ -792,23 +796,152 @@ const App: React.FC = () => {
     }
   }, []);
 
-    const handleInsertTable = useCallback(() => {
+  const applyContentEdit = useCallback((nextContent: string, selection?: { start: number; end: number }) => {
+    const path = activeTabPathRef.current;
+    if (!path) return;
+    const tab = tabsRef.current.find((t) => t.path === path);
+    if (!tab || tab.isBinary || tab.isReadonly) {
+      setStatusMessage(tab?.isReadonly ? '只读文件不可编辑' : '当前文件不支持编辑');
+      return;
+    }
+
+    const pane = editorPaneRef.current;
+    if (pane && selection) {
+      pane.applyTextEdit(nextContent, selection);
+      return;
+    }
+
+    setTabs((prev) =>
+      prev.map((t) => (t.path === path ? { ...t, content: nextContent, isModified: true } : t))
+    );
+  }, []);
+
+  const handleFormat = useCallback((action: FormatAction) => {
     const path = activeTabPathRef.current;
     if (!path) {
       setStatusMessage('请先打开或新建文档');
       return;
     }
-    setTabs((prev) =>
-      prev.map((tab) => {
-        if (tab.path !== path || tab.isBinary) return tab;
-        const content = tab.content.endsWith('\n') || tab.content.length === 0
-          ? `${tab.content}${SAMPLE_TABLE}`
-          : `${tab.content}\n\n${SAMPLE_TABLE}`;
-        return { ...tab, content, isModified: true };
-      })
-    );
-    setStatusMessage('已插入 Markdown 表格');
-  }, []);
+    const tab = tabsRef.current.find((t) => t.path === path);
+    if (!tab || tab.isBinary) {
+      setStatusMessage('当前文件不支持格式化');
+      return;
+    }
+    if (tab.isReadonly) {
+      setStatusMessage('只读文件不可编辑');
+      return;
+    }
+
+    const isMd = MARKDOWN_EXTENSIONS.has(tab.extension);
+    if (!isMd && action !== 'formatDoc') {
+      setStatusMessage('该格式操作仅支持 Markdown');
+      return;
+    }
+
+    let sel = { start: tab.content.length, end: tab.content.length };
+    const paneSel = editorPaneRef.current?.getSelectionOffsets();
+    if (paneSel) sel = paneSel;
+
+    const result = applyMarkdownFormat(tab.content, sel, action);
+    applyContentEdit(result.content, result.selection);
+    const labels: Record<string, string> = {
+      bold: '加粗', italic: '斜体', strike: '删除线', code: '行内代码', highlight: '高亮',
+      h1: '标题1', h2: '标题2', h3: '标题3', quote: '引用', ul: '无序列表', ol: '有序列表',
+      task: '任务列表', link: '链接', image: '图片', codeblock: '代码块', hr: '分隔线', table: '表格',
+      formatDoc: '文档',
+    };
+    setStatusMessage(`已应用格式: ${labels[action] || action}`);
+  }, [applyContentEdit]);
+
+  const handleFormatDocument = useCallback(async () => {
+    const path = activeTabPathRef.current;
+    if (!path) {
+      setStatusMessage('请先打开或新建文档');
+      return;
+    }
+    const tab = tabsRef.current.find((t) => t.path === path);
+    if (!tab || tab.isBinary) {
+      setStatusMessage('当前文件不支持格式化');
+      return;
+    }
+    if (tab.isReadonly) {
+      setStatusMessage('只读文件不可编辑');
+      return;
+    }
+
+    const isMd = MARKDOWN_EXTENSIONS.has(tab.extension);
+    if (isMd) {
+      handleFormat('formatDoc');
+      return;
+    }
+
+    // Reliable JSON pretty-print (does not depend on Monaco workers)
+    if (tab.extension === 'json') {
+      const result = formatJsonDocument(tab.content, 2);
+      if (!result.ok) {
+        setStatusMessage(`JSON 格式化失败: ${result.message}`);
+        return;
+      }
+      if (!result.changed) {
+        setStatusMessage('JSON 已是格式化状态');
+        return;
+      }
+      applyContentEdit(result.content, { start: 0, end: 0 });
+      setStatusMessage('已格式化 JSON');
+      return;
+    }
+
+    const ok = await editorPaneRef.current?.formatDocument();
+    if (ok) {
+      setStatusMessage('已格式化文档');
+      return;
+    }
+
+    // fallback: trim trailing spaces / normalize newlines for plain text
+    const next = tab.content
+      .replace(/\r\n/g, '\n')
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\n*$/, '\n');
+    if (next !== tab.content) {
+      applyContentEdit(next, { start: 0, end: 0 });
+      setStatusMessage('已清理空白并规范化换行');
+    } else {
+      setStatusMessage('当前语言暂无内置格式化器，已检查无需清理');
+    }
+  }, [applyContentEdit, handleFormat]);
+
+  const handleMinifyJson = useCallback(() => {
+    const path = activeTabPathRef.current;
+    if (!path) {
+      setStatusMessage('请先打开或新建文档');
+      return;
+    }
+    const tab = tabsRef.current.find((t) => t.path === path);
+    if (!tab || tab.isBinary || tab.extension !== 'json') {
+      setStatusMessage('仅 JSON 文件支持压缩');
+      return;
+    }
+    if (tab.isReadonly) {
+      setStatusMessage('只读文件不可编辑');
+      return;
+    }
+    const result = minifyJsonDocument(tab.content);
+    if (!result.ok) {
+      setStatusMessage(`JSON 压缩失败: ${result.message}`);
+      return;
+    }
+    if (!result.changed) {
+      setStatusMessage('JSON 已是压缩状态');
+      return;
+    }
+    applyContentEdit(result.content, { start: 0, end: 0 });
+    setStatusMessage('已压缩 JSON');
+  }, [applyContentEdit]);
+
+  const handleInsertTable = useCallback(() => {
+    handleFormat('table');
+  }, [handleFormat]);
 
   const handleExportHtml = useCallback(async () => {
     const tab = tabsRef.current.find((t) => t.path === activeTabPathRef.current);
@@ -943,11 +1076,26 @@ const App: React.FC = () => {
         setShortcutsOpen((v) => !v);
         return;
       }
+      if ((e.key === 'b' || e.key === 'B') && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        handleFormat('bold');
+        return;
+      }
+      if ((e.key === 'i' || e.key === 'I') && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        handleFormat('italic');
+        return;
+      }
+      if ((e.key === 'f' || e.key === 'F') && e.altKey && e.shiftKey) {
+        e.preventDefault();
+        void handleFormatDocument();
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleSaveAs, handleNewFile, handleOpenFile, handleOpenFolder, handleTabClose]);
+  }, [handleSave, handleSaveAs, handleNewFile, handleOpenFile, handleOpenFolder, handleTabClose, handleFormat, handleFormatDocument]);
 
   // Initial open
   useEffect(() => {
@@ -1099,6 +1247,13 @@ const App: React.FC = () => {
     { id: 'export-html', title: '导出 HTML', run: () => { void handleExportHtml(); } },
     { id: 'export-pdf', title: '导出/打印 PDF', run: () => { void handleExportPdf(); } },
     { id: 'table', title: '插入 Markdown 表格', run: handleInsertTable },
+    { id: 'format-doc', title: '格式化文档', hint: 'Shift+Alt+F', run: () => { void handleFormatDocument(); } },
+    { id: 'minify-json', title: '压缩 JSON', run: handleMinifyJson },
+    { id: 'bold', title: '加粗', hint: 'Ctrl+B', run: () => handleFormat('bold') },
+    { id: 'italic', title: '斜体', hint: 'Ctrl+I', run: () => handleFormat('italic') },
+    { id: 'code', title: '行内代码', run: () => handleFormat('code') },
+    { id: 'h2', title: '标题 2', run: () => handleFormat('h2') },
+    { id: 'link', title: '插入链接', run: () => handleFormat('link') },
     { id: 'history', title: '本地历史版本', run: () => setHistoryOpen(true) },
     { id: 'utf8', title: '以 UTF-8 重新打开', run: () => { void handleReopenEncoding('UTF-8'); } },
     { id: 'gbk', title: '以 GBK 重新打开', run: () => { void handleReopenEncoding('GBK'); } },
@@ -1130,7 +1285,11 @@ const App: React.FC = () => {
         onSearchProject={() => setSearchOpen(true)}
         onExportHtml={() => { void handleExportHtml(); }}
         onExportPdf={() => { void handleExportPdf(); }}
-        onInsertTable={handleInsertTable}
+        onFormat={handleFormat}
+        onFormatDocument={() => { void handleFormatDocument(); }}
+        onMinifyJson={handleMinifyJson}
+        isJson={!!activeTab && activeTab.extension === 'json'}
+        canFormat={!!activeTab && !activeTab.isBinary && !activeTab.isReadonly}
         onDiff={() => setDiffOpen(true)}
         onFocusMode={() => setFocusMode((v) => !v)}
         focusMode={focusMode}
@@ -1274,6 +1433,7 @@ const App: React.FC = () => {
 
             {activeTab && !activeTab.isBinary && !isMarkdown && !(isCsv && csvTableMode) && (
               <EditorPane
+                ref={editorPaneRef}
                 content={activeTab.content}
                 extension={activeTab.extension}
                 onContentChange={handleContentChange}
@@ -1299,6 +1459,7 @@ const App: React.FC = () => {
 
             {activeTab && isMarkdown && viewMode === 'code' && (
               <EditorPane
+                ref={editorPaneRef}
                 content={activeTab.content}
                 extension={activeTab.extension}
                 onContentChange={handleContentChange}
@@ -1323,6 +1484,7 @@ const App: React.FC = () => {
               <div className="split-view">
                 <div className="split-editor">
                   <EditorPane
+                    ref={editorPaneRef}
                     content={activeTab.content}
                     extension={activeTab.extension}
                     onContentChange={handleContentChange}
@@ -1330,8 +1492,8 @@ const App: React.FC = () => {
                     scrollToLine={scrollToLine}
                     onScroll={setScrollPercent}
                     fontSize={settings.fontSize}
-                colorTheme={settings.theme}
-                readOnly={!!activeTab?.isReadonly}
+                    colorTheme={settings.theme}
+                    readOnly={!!activeTab?.isReadonly}
                     onFindHandlersReady={setFindHandlers}
                   />
                 </div>

@@ -1,5 +1,6 @@
-import React from 'react';
+import { useEffect, useRef, useState, type FC } from 'react';
 import type { ViewMode } from '../types';
+import type { FormatAction } from '../utils/markdownFormat';
 import './Toolbar.css';
 
 interface ToolbarProps {
@@ -15,7 +16,10 @@ interface ToolbarProps {
   onSearchProject?: () => void;
   onExportHtml?: () => void;
   onExportPdf?: () => void;
-  onInsertTable?: () => void;
+  onFormat?: (action: FormatAction) => void;
+  onFormatDocument?: () => void;
+  onMinifyJson?: () => void;
+  isJson?: boolean;
   onDiff?: () => void;
   onFocusMode?: () => void;
   focusMode?: boolean;
@@ -27,6 +31,7 @@ interface ToolbarProps {
   onHistory?: () => void;
   onSettings?: () => void;
   canSave: boolean;
+  canFormat?: boolean;
   fileName: string | null;
   isModified: boolean;
   isMarkdown: boolean;
@@ -39,7 +44,83 @@ interface ToolbarProps {
   autoSaveEnabled?: boolean;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ({
+type MenuKey = 'file' | 'format' | 'edit' | 'export' | 'more' | null;
+
+interface MenuItem {
+  id: string;
+  label: string;
+  hint?: string;
+  onClick?: () => void;
+  active?: boolean;
+  danger?: boolean;
+  hidden?: boolean;
+  separator?: boolean;
+}
+
+function MenuDropdown({
+  label,
+  open,
+  onToggle,
+  items,
+  align = 'left',
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  items: MenuItem[];
+  align?: 'left' | 'right';
+}) {
+  const visible = items.filter((i) => !i.hidden);
+  if (visible.length === 0) return null;
+
+  return (
+    <div className={`toolbar-menu ${open ? 'open' : ''}`}>
+      <button
+        type="button"
+        className={`toolbar-btn toolbar-menu-trigger ${open ? 'active' : ''}`}
+        onClick={onToggle}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {label}
+        <span className="toolbar-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div className={`toolbar-menu-panel align-${align}`} role="menu">
+          {visible.map((item) =>
+            item.separator ? (
+              <div key={item.id} className="toolbar-menu-sep" role="separator" />
+            ) : (
+              <button
+                key={item.id}
+                type="button"
+                role="menuitem"
+                className={`toolbar-menu-item ${item.active ? 'active' : ''} ${item.danger ? 'danger' : ''}`}
+                onClick={() => {
+                  item.onClick?.();
+                }}
+              >
+                <span>{item.label}</span>
+                {item.hint && <kbd>{item.hint}</kbd>}
+              </button>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const VIEW_MODES: Array<{ id: ViewMode; label: string; title: string }> = [
+  { id: 'wysiwyg', label: '实时', title: '所见即所得' },
+  { id: 'code', label: '源码', title: 'Markdown 源码' },
+  { id: 'preview', label: '预览', title: '纯预览' },
+  { id: 'split', label: '分屏', title: '源码 + 预览' },
+];
+
+const Toolbar: FC<ToolbarProps> = ({
   viewMode,
   onViewModeChange,
   onSave,
@@ -52,7 +133,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onSearchProject,
   onExportHtml,
   onExportPdf,
-  onInsertTable,
+  onFormat,
+  onFormatDocument,
+  onMinifyJson,
+  isJson = false,
   onDiff,
   onFocusMode,
   focusMode,
@@ -64,6 +148,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onHistory,
   onSettings,
   canSave,
+  canFormat = true,
   fileName,
   isModified,
   isMarkdown,
@@ -75,8 +160,104 @@ const Toolbar: React.FC<ToolbarProps> = ({
   hasOutline,
   autoSaveEnabled,
 }) => {
+  const [menu, setMenu] = useState<MenuKey>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menu) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenu(null);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
+
+  const closeAnd = (fn?: () => void) => () => {
+    setMenu(null);
+    fn?.();
+  };
+
+  const toggle = (key: Exclude<MenuKey, null>) => {
+    setMenu((cur) => (cur === key ? null : key));
+  };
+
+  const format = (action: FormatAction) => closeAnd(() => onFormat?.(action));
+
+  const fileItems: MenuItem[] = [
+    { id: 'new', label: '新建文档', hint: 'Ctrl+N', onClick: closeAnd(onNewFile), hidden: !onNewFile },
+    { id: 'open-file', label: '打开文件', hint: 'Ctrl+Shift+O', onClick: closeAnd(onOpenFile) },
+    { id: 'open-folder', label: '打开文件夹', hint: 'Ctrl+O', onClick: closeAnd(onOpenFolder) },
+    { id: 'quick', label: '快速打开…', hint: 'Ctrl+P', onClick: closeAnd(onQuickOpen), hidden: !onQuickOpen },
+    { id: 'save-as', label: '另存为', hint: 'Ctrl+Shift+S', onClick: closeAnd(onSaveAs), hidden: !onSaveAs },
+    { id: 'history', label: '本地历史', onClick: closeAnd(onHistory), hidden: !onHistory },
+  ];
+
+  const formatItems: MenuItem[] = [
+    { id: 'format-doc', label: '格式化文档', hint: 'Shift+Alt+F', onClick: closeAnd(onFormatDocument), hidden: !onFormatDocument },
+    { id: 'minify-json', label: '压缩 JSON', onClick: closeAnd(onMinifyJson), hidden: !isJson || !onMinifyJson },
+    { id: 'sep-0', label: '', separator: true, hidden: !isMarkdown || !onFormat },
+    { id: 'bold', label: '加粗', hint: 'Ctrl+B', onClick: format('bold'), hidden: !isMarkdown || !onFormat },
+    { id: 'italic', label: '斜体', hint: 'Ctrl+I', onClick: format('italic'), hidden: !isMarkdown || !onFormat },
+    { id: 'strike', label: '删除线', onClick: format('strike'), hidden: !isMarkdown || !onFormat },
+    { id: 'code', label: '行内代码', onClick: format('code'), hidden: !isMarkdown || !onFormat },
+    { id: 'highlight', label: '高亮', onClick: format('highlight'), hidden: !isMarkdown || !onFormat },
+    { id: 'sep-1', label: '', separator: true, hidden: !isMarkdown || !onFormat },
+    { id: 'h1', label: '标题 1', onClick: format('h1'), hidden: !isMarkdown || !onFormat },
+    { id: 'h2', label: '标题 2', onClick: format('h2'), hidden: !isMarkdown || !onFormat },
+    { id: 'h3', label: '标题 3', onClick: format('h3'), hidden: !isMarkdown || !onFormat },
+    { id: 'sep-2', label: '', separator: true, hidden: !isMarkdown || !onFormat },
+    { id: 'ul', label: '无序列表', onClick: format('ul'), hidden: !isMarkdown || !onFormat },
+    { id: 'ol', label: '有序列表', onClick: format('ol'), hidden: !isMarkdown || !onFormat },
+    { id: 'task', label: '任务列表', onClick: format('task'), hidden: !isMarkdown || !onFormat },
+    { id: 'quote', label: '引用', onClick: format('quote'), hidden: !isMarkdown || !onFormat },
+    { id: 'sep-3', label: '', separator: true, hidden: !isMarkdown || !onFormat },
+    { id: 'link', label: '链接', onClick: format('link'), hidden: !isMarkdown || !onFormat },
+    { id: 'image', label: '图片', onClick: format('image'), hidden: !isMarkdown || !onFormat },
+    { id: 'codeblock', label: '代码块', onClick: format('codeblock'), hidden: !isMarkdown || !onFormat },
+    { id: 'hr', label: '分隔线', onClick: format('hr'), hidden: !isMarkdown || !onFormat },
+    { id: 'table', label: '表格', onClick: format('table'), hidden: !isMarkdown || !onFormat },
+  ];
+
+  const editItems: MenuItem[] = [
+    {
+      id: 'focus',
+      label: focusMode ? '退出专注' : '专注模式',
+      hint: 'Ctrl+\\',
+      onClick: closeAnd(onFocusMode),
+      active: !!focusMode,
+      hidden: !onFocusMode,
+    },
+    {
+      id: 'csv',
+      label: csvTableMode ? 'CSV 源码视图' : 'CSV 表格视图',
+      onClick: closeAnd(onToggleCsvView),
+      active: !!csvTableMode,
+      hidden: !onToggleCsvView,
+    },
+    { id: 'diff', label: '与磁盘比较', hint: 'Ctrl+Shift+D', onClick: closeAnd(onDiff), hidden: !onDiff },
+    { id: 'utf8', label: '以 UTF-8 重开', onClick: closeAnd(onReopenUtf8), hidden: !onReopenUtf8 },
+    { id: 'gbk', label: '以 GBK 重开', onClick: closeAnd(onReopenGbk), hidden: !onReopenGbk },
+  ];
+
+  const exportItems: MenuItem[] = [
+    { id: 'html', label: '导出 HTML', onClick: closeAnd(onExportHtml), hidden: !onExportHtml },
+    { id: 'pdf', label: '导出 / 打印 PDF', onClick: closeAnd(onExportPdf), hidden: !onExportPdf },
+  ];
+
+  const moreItems: MenuItem[] = [
+    { id: 'search', label: '项目搜索', hint: 'Ctrl+Shift+F', onClick: closeAnd(onSearchProject), hidden: !onSearchProject },
+    { id: 'shortcuts', label: '快捷键', hint: 'Ctrl+/', onClick: closeAnd(onShortcuts), hidden: !onShortcuts },
+  ];
+
   return (
-    <div className="toolbar">
+    <div className="toolbar" ref={rootRef}>
       <div className="toolbar-left">
         {hasFileTree && (
           <button
@@ -85,24 +266,17 @@ const Toolbar: React.FC<ToolbarProps> = ({
             title={fileTreeVisible ? '隐藏文件目录' : '显示文件目录'}
             type="button"
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 4.5h4.5l1.5-2h4.5a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V5a.5.5 0 0 1 .5-.5Z"/>
-            </svg>
             目录
           </button>
         )}
-        {onNewFile && (
-          <button className="toolbar-btn" onClick={onNewFile} title="新建文件 (Ctrl+N)" type="button">
-            新建
-          </button>
-        )}
-        <button className="toolbar-btn" onClick={onOpenFolder} title="打开文件夹 (Ctrl+O)" type="button">
-          打开文件夹
-        </button>
-        <button className="toolbar-btn" onClick={onOpenFile} title="打开文件 (Ctrl+Shift+O)" type="button">
-          打开文件
-        </button>
-        <div className="toolbar-divider" />
+
+        <MenuDropdown
+          label="文件"
+          open={menu === 'file'}
+          onToggle={() => toggle('file')}
+          items={fileItems}
+        />
+
         <button
           className={`toolbar-btn toolbar-btn-primary ${!canSave ? 'disabled' : ''}`}
           onClick={onSave}
@@ -112,135 +286,157 @@ const Toolbar: React.FC<ToolbarProps> = ({
         >
           保存
         </button>
-        {onSaveAs && (
-          <button className="toolbar-btn" onClick={onSaveAs} title="另存为 (Ctrl+Shift+S)" type="button">
-            另存为
-          </button>
-        )}
+
         {onFind && (
           <button className="toolbar-btn" onClick={onFind} title="查找替换 (Ctrl+F)" type="button">
             查找
           </button>
         )}
-        {onQuickOpen && (
-          <button className="toolbar-btn" onClick={onQuickOpen} title="快速打开 (Ctrl+P)" type="button">
-            打开…
-          </button>
-        )}
-        {onSearchProject && (
-          <button className="toolbar-btn" onClick={onSearchProject} title="在文件中搜索 (Ctrl+Shift+F)" type="button">
-            搜项目
-          </button>
-        )}
-        {onInsertTable && (
-          <button className="toolbar-btn" onClick={onInsertTable} title="插入 Markdown 表格" type="button">
-            表格
-          </button>
-        )}
-        {onExportHtml && (
-          <button className="toolbar-btn" onClick={onExportHtml} title="导出 HTML" type="button">
-            HTML
-          </button>
-        )}
-        {onExportPdf && (
-          <button className="toolbar-btn" onClick={onExportPdf} title="导出/打印 PDF" type="button">
-            PDF
-          </button>
-        )}
-        {onDiff && (
-          <button className="toolbar-btn" onClick={onDiff} title="与磁盘比较 (Ctrl+Shift+D)" type="button">
-            比较
-          </button>
-        )}
-        {onFocusMode && (
-          <button
-            className={`toolbar-btn ${focusMode ? 'active' : ''}`}
-            onClick={onFocusMode}
-            title="专注模式 (Ctrl+\\)"
-            type="button"
-          >
-            专注
-          </button>
-        )}
-        {onReopenUtf8 && (
-          <button className="toolbar-btn" onClick={onReopenUtf8} title="以 UTF-8 重新打开" type="button">
-            UTF-8
-          </button>
-        )}
-        {onReopenGbk && (
-          <button className="toolbar-btn" onClick={onReopenGbk} title="以 GBK 重新打开" type="button">
-            GBK
-          </button>
-        )}
-        {onToggleCsvView && (
-          <button
-            className={`toolbar-btn ${csvTableMode ? 'active' : ''}`}
-            onClick={onToggleCsvView}
-            title="切换 CSV 表格/源码视图"
-            type="button"
-          >
-            {csvTableMode ? 'CSV源码' : 'CSV表格'}
-          </button>
-        )}
-        {onShortcuts && (
-          <button className="toolbar-btn" onClick={onShortcuts} title="快捷键 (Ctrl+/)" type="button">
-            快捷键
-          </button>
-        )}
-        {onHistory && (
-          <button className="toolbar-btn" onClick={onHistory} title="本地历史版本" type="button">
-            历史
-          </button>
-        )}
-      </div>
 
-      <div className="toolbar-center">
-        {fileName && (
-          <span className="toolbar-file-info">
-            {isModified && <span className="modified-dot">●</span>}
-            {fileName}
-            {autoSaveEnabled && <span className="autosave-badge">自动保存</span>}
-          </span>
-        )}
-      </div>
+        <div className="toolbar-divider" />
 
-      <div className="toolbar-right">
-        {isMarkdown && (
-          <div className="toolbar-view-modes">
+        {(onFormat || onFormatDocument) && (
+          <MenuDropdown
+            label="格式"
+            open={menu === 'format'}
+            onToggle={() => toggle('format')}
+            items={formatItems}
+          />
+        )}
+
+        {isMarkdown && onFormat && (
+          <div className="toolbar-format-quick" aria-label="常用格式">
             <button
-              className={`view-mode-btn ${viewMode === 'wysiwyg' ? 'active' : ''}`}
-              onClick={() => onViewModeChange('wysiwyg')}
-              title="所见即所得模式"
               type="button"
+              className="toolbar-btn toolbar-format-btn"
+              title="加粗 (Ctrl+B)"
+              disabled={!canFormat}
+              onClick={() => onFormat('bold')}
             >
-              实时
+              <strong>B</strong>
             </button>
             <button
-              className={`view-mode-btn ${viewMode === 'code' ? 'active' : ''}`}
-              onClick={() => onViewModeChange('code')}
-              title="源码模式"
               type="button"
+              className="toolbar-btn toolbar-format-btn"
+              title="斜体 (Ctrl+I)"
+              disabled={!canFormat}
+              onClick={() => onFormat('italic')}
             >
-              源码
+              <em>I</em>
             </button>
             <button
-              className={`view-mode-btn ${viewMode === 'preview' ? 'active' : ''}`}
-              onClick={() => onViewModeChange('preview')}
-              title="纯预览模式"
               type="button"
+              className="toolbar-btn toolbar-format-btn"
+              title="行内代码"
+              disabled={!canFormat}
+              onClick={() => onFormat('code')}
             >
-              预览
+              {'</>'}
             </button>
             <button
-              className={`view-mode-btn ${viewMode === 'split' ? 'active' : ''}`}
-              onClick={() => onViewModeChange('split')}
-              title="分屏模式（代码 + 预览）"
               type="button"
+              className="toolbar-btn toolbar-format-btn"
+              title="标题 2"
+              disabled={!canFormat}
+              onClick={() => onFormat('h2')}
             >
-              分屏
+              H2
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn toolbar-format-btn"
+              title="无序列表"
+              disabled={!canFormat}
+              onClick={() => onFormat('ul')}
+            >
+              ••
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn toolbar-format-btn"
+              title="链接"
+              disabled={!canFormat}
+              onClick={() => onFormat('link')}
+            >
+              链
             </button>
           </div>
         )}
+
+        {onFormatDocument && (
+          <button
+            type="button"
+            className={`toolbar-btn ${!canFormat ? 'disabled' : ''}`}
+            disabled={!canFormat}
+            title="格式化文档 (Shift+Alt+F)"
+            onClick={onFormatDocument}
+          >
+            格式化
+          </button>
+        )}
+
+        <MenuDropdown
+          label="编辑"
+          open={menu === 'edit'}
+          onToggle={() => toggle('edit')}
+          items={editItems}
+        />
+        <MenuDropdown
+          label="导出"
+          open={menu === 'export'}
+          onToggle={() => toggle('export')}
+          items={exportItems}
+        />
+        <MenuDropdown
+          label="更多"
+          open={menu === 'more'}
+          onToggle={() => toggle('more')}
+          items={moreItems}
+        />
+      </div>
+
+      <div className="toolbar-center">
+        {isMarkdown ? (
+          <div className="toolbar-view-modes" role="tablist" aria-label="Markdown 视图">
+            {VIEW_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                role="tab"
+                aria-selected={viewMode === mode.id}
+                className={`view-mode-btn ${viewMode === mode.id ? 'active' : ''}`}
+                onClick={() => onViewModeChange(mode.id)}
+                title={mode.title}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="toolbar-view-placeholder">编辑器</div>
+        )}
+
+        <div className="toolbar-file-meta">
+          {fileName ? (
+            <>
+              <span className="toolbar-file-info">
+                {isModified && <span className="modified-dot">●</span>}
+                <span className="toolbar-file-name" title={fileName}>
+                  {fileName}
+                </span>
+              </span>
+              <div className="toolbar-file-flags">
+                {autoSaveEnabled && <span className="autosave-badge">自动保存</span>}
+                {focusMode && <span className="focus-badge">专注</span>}
+              </div>
+            </>
+          ) : (
+            <span className="toolbar-file-empty">未打开文件</span>
+          )}
+        </div>
+      </div>
+
+      <div className="toolbar-right">
         {hasOutline && (
           <button
             className={`toolbar-btn toolbar-btn-icon ${outlineVisible ? 'active' : ''}`}
@@ -248,14 +444,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
             title={outlineVisible ? '隐藏大纲' : '显示大纲'}
             type="button"
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 4h12M2 8h8M2 12h5"/>
-            </svg>
             大纲
           </button>
         )}
         {onSettings && (
-          <button className="toolbar-btn toolbar-btn-icon" onClick={onSettings} title="设置" type="button">
+          <button
+            className="toolbar-btn toolbar-btn-icon"
+            onClick={onSettings}
+            title="设置"
+            type="button"
+          >
             设置
           </button>
         )}

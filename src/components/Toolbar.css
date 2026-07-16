@@ -1,133 +1,166 @@
 .toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.2fr) minmax(120px, 0.7fr);
   align-items: center;
-  justify-content: space-between;
-  height: 50px;
-  padding: 0 16px;
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid var(--app-line);
+  gap: 12px;
+  height: 52px;
+  padding: 0 14px;
   flex-shrink: 0;
-  gap: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid var(--app-line);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 30;
+}
+
+.app[data-theme='dark'] .toolbar {
+  background: rgba(31, 36, 43, 0.92);
 }
 
 .toolbar-left,
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.toolbar-right {
+  justify-content: flex-end;
 }
 
 .toolbar-center {
-  flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  overflow: hidden;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.toolbar-file-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 16px;
 }
 
 .toolbar-file-info {
-  max-width: 460px;
-  padding: 6px 12px;
-  overflow: hidden;
-  color: var(--app-text-soft);
-  background: var(--app-surface-muted);
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(360px, 42vw);
+  color: var(--app-text);
   font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.toolbar-file-name {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.toolbar-file-empty {
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toolbar-file-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .modified-dot {
-  color: var(--app-green-strong);
-  margin-right: 6px;
+  color: var(--app-orange-strong);
+  font-size: 12px;
+  line-height: 1;
 }
 
 .toolbar-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 13px;
-  background: var(--app-surface-muted);
+  height: 30px;
+  padding: 0 11px;
   border: 1px solid transparent;
-  border-radius: 999px;
-  color: var(--app-text);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--app-text-soft);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
-}
-
-.toolbar-btn svg {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  opacity: 0.65;
-  transition: opacity 140ms ease;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
 .toolbar-btn:hover:not(.disabled) {
-  transform: translateY(-1px);
-  background: #ffffff;
+  background: var(--app-surface-muted);
   border-color: var(--app-line);
-  box-shadow: var(--app-shadow-sm);
-}
-
-.toolbar-btn:hover:not(.disabled) svg {
-  opacity: 1;
+  color: var(--app-text);
 }
 
 .toolbar-btn:active:not(.disabled) {
-  transform: translateY(0);
-  box-shadow: none;
+  transform: translateY(1px);
 }
 
-.toolbar-btn.disabled {
-  opacity: 0.45;
+.toolbar-btn.disabled,
+.toolbar-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .toolbar-btn.active {
   background: var(--app-orange-soft);
-  border-color: rgba(241, 149, 63, 0.28);
   color: var(--app-orange-strong);
-}
-
-.toolbar-btn.active svg {
-  opacity: 1;
+  border-color: transparent;
 }
 
 .toolbar-btn-primary {
-  background: var(--app-orange-soft);
-  color: var(--app-orange-strong);
+  background: linear-gradient(135deg, var(--app-orange), var(--app-orange-strong));
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(241, 149, 63, 0.18);
 }
 
 .toolbar-btn-primary:hover:not(.disabled) {
-  background: linear-gradient(135deg, var(--app-orange), var(--app-orange-strong));
-  color: #ffffff;
+  filter: brightness(1.02);
+  color: #fff;
+  border-color: transparent;
+}
+
+.toolbar-btn-icon {
+  padding: 0 10px;
 }
 
 .toolbar-divider {
   width: 1px;
-  height: 20px;
-  background: var(--app-line);
+  height: 18px;
   margin: 0 2px;
+  background: var(--app-line);
+  flex-shrink: 0;
 }
 
+/* View modes - center segmented control */
 .toolbar-view-modes {
-  display: flex;
-  gap: 3px;
+  display: inline-flex;
+  align-items: center;
   padding: 3px;
-  background: var(--app-surface-muted);
+  gap: 2px;
   border-radius: 999px;
+  background: var(--app-surface-muted);
+  border: 1px solid var(--app-line);
 }
 
 .view-mode-btn {
-  padding: 6px 10px;
-  background: transparent;
-  border: 0;
+  min-width: 52px;
+  height: 26px;
+  padding: 0 12px;
+  border: none;
   border-radius: 999px;
-  color: var(--app-text-soft);
+  background: transparent;
+  color: var(--app-text-muted);
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
@@ -135,23 +168,176 @@
 }
 
 .view-mode-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
   color: var(--app-text);
 }
 
 .view-mode-btn.active {
-  background: #ffffff;
+  background: #fff;
   color: var(--app-orange-strong);
-  box-shadow: 0 4px 16px rgba(31, 41, 55, 0.08);
+  box-shadow: 0 2px 8px rgba(31, 41, 55, 0.08);
 }
 
+.app[data-theme='dark'] .view-mode-btn.active {
+  background: #2a313a;
+}
 
-.autosave-badge {
-  margin-left: 8px;
+.toolbar-view-placeholder {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-surface-muted);
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Dropdown menus */
+.toolbar-menu {
+  position: relative;
+}
+
+.toolbar-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-caret {
+  font-size: 10px;
+  opacity: 0.7;
+  transform: translateY(-0.5px);
+}
+
+.toolbar-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  min-width: 196px;
+  padding: 6px;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+  z-index: 40;
+}
+
+.toolbar-menu-panel.align-left {
+  left: 0;
+}
+
+.toolbar-menu-panel.align-right {
+  right: 0;
+}
+
+.toolbar-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.toolbar-menu-item:hover,
+.toolbar-menu-item.active {
+  background: var(--app-orange-soft);
+  color: var(--app-orange-strong);
+}
+
+.toolbar-menu-item.danger {
+  color: var(--app-danger);
+}
+
+.toolbar-menu-item kbd {
+  color: var(--app-text-muted);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.autosave-badge,
+.focus-badge {
   padding: 2px 8px;
   border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.autosave-badge {
   background: var(--app-green-soft);
   color: var(--app-green-strong);
-  font-size: 11px;
-  font-weight: 700;
+}
+
+.focus-badge {
+  background: var(--app-orange-soft);
+  color: var(--app-orange-strong);
+}
+
+@media (max-width: 1100px) {
+  .toolbar {
+    grid-template-columns: 1fr auto;
+    height: auto;
+    min-height: 52px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .toolbar-center {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+
+  .toolbar-right {
+    order: 2;
+  }
+}
+
+.toolbar-format-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: var(--app-surface-muted);
+}
+
+.toolbar-format-btn {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 7px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.toolbar-format-btn em {
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.toolbar-format-btn strong {
+  font-weight: 800;
+}
+
+.toolbar-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--app-line);
+}
+
+.toolbar-menu-panel {
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
 }

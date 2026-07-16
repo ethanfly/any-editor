@@ -27,12 +27,14 @@ const GROUPS: Array<{ title: string; items: Array<[string, string]> }> = [
     ],
   },
   {
-    title: '写作',
+    title: '写作 / 格式',
     items: [
+      ['Ctrl+B', '加粗'],
+      ['Ctrl+I', '斜体'],
+      ['Shift+Alt+F', '格式化文档'],
       ['Ctrl+\\', '专注模式'],
       ['Ctrl+Shift+D', '与磁盘比较'],
-      ['工具栏 表格', '插入 Markdown 表格'],
-      ['工具栏 HTML/PDF', '导出'],
+      ['工具栏 格式', '标题/列表/链接/表格等'],
     ],
   },
   {
