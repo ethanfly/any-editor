@@ -173,9 +173,12 @@
 .toolbar-menu-panel {
   position: absolute;
   top: calc(100% + 6px);
-  min-width: 196px;
+  width: max-content;
+  min-width: 12.5rem;
+  max-width: min(90vw, 28rem);
   max-height: min(70vh, 420px);
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 6px;
   border: 1px solid var(--app-line);
   border-radius: 12px;
@@ -197,9 +200,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 18px;
   min-height: 34px;
-  padding: 7px 10px;
+  padding: 7px 12px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -208,6 +211,12 @@
   font-size: 0.9231rem;
   font-weight: 650;
   text-align: left;
+  white-space: nowrap;
+}
+
+.toolbar-menu-item > span {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .toolbar-menu-item:hover,
@@ -221,6 +230,7 @@
 }
 
 .toolbar-menu-item kbd {
+  flex: 0 0 auto;
   color: var(--app-text-muted);
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 0.7692rem;

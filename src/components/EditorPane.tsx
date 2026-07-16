@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useRef, useCallback, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import type { OnMount } from '@monaco-editor/react';
 import type { editor, IDisposable } from 'monaco-editor';
@@ -17,6 +17,8 @@ interface EditorPaneProps {
   colorTheme?: 'light' | 'dark';
   readOnly?: boolean;
   onFindHandlersReady?: (handlers: FindReplaceHandlers | null) => void;
+  onRequestFind?: (replaceMode?: boolean) => void;
+  onRequestFormat?: () => void;
 }
 
 export interface EditorPaneHandle {
@@ -69,6 +71,8 @@ const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function Editor
     colorTheme = 'light',
     readOnly = false,
     onFindHandlersReady,
+    onRequestFind,
+    onRequestFormat,
   },
   ref
 ) {
@@ -78,11 +82,16 @@ const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function Editor
   const onCursorChangeRef = useRef(onCursorChange);
   const lastNavTokenRef = useRef<number | null>(null);
   const disposablesRef = useRef<IDisposable[]>([]);
+  const onRequestFindRef = useRef(onRequestFind);
+  const onRequestFormatRef = useRef(onRequestFormat);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     onScrollRef.current = onScroll;
     onCursorChangeRef.current = onCursorChange;
-  }, [onScroll, onCursorChange]);
+    onRequestFindRef.current = onRequestFind;
+    onRequestFormatRef.current = onRequestFormat;
+  }, [onScroll, onCursorChange, onRequestFind, onRequestFormat]);
 
   const getFindHandlers = useCallback((): FindReplaceHandlers | null => {
     const ed = editorRef.current;
@@ -258,6 +267,56 @@ const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function Editor
       })
     );
 
+    // Override Monaco/browser find with app FindReplace
+    disposablesRef.current.push(
+      editorInstance.addAction({
+        id: 'any-editor.find',
+        label: '查找',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF],
+        precondition: undefined,
+        keybindingContext: undefined,
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 1.5,
+        run: () => onRequestFindRef.current?.(false),
+      })
+    );
+    disposablesRef.current.push(
+      editorInstance.addAction({
+        id: 'any-editor.replace',
+        label: '替换',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH],
+        run: () => onRequestFindRef.current?.(true),
+      })
+    );
+
+    // Chinese context menu: intercept native + Monaco events
+    const dom = editorInstance.getDomNode();
+    if (dom) {
+      const onDomContextMenu = (ev: MouseEvent) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        setCtxMenu({ x: ev.clientX, y: ev.clientY });
+      };
+      dom.addEventListener('contextmenu', onDomContextMenu);
+      disposablesRef.current.push({
+        dispose: () => dom.removeEventListener('contextmenu', onDomContextMenu),
+      });
+    }
+    disposablesRef.current.push(
+      editorInstance.onContextMenu((e) => {
+        try {
+          e.event.preventDefault();
+          e.event.stopPropagation();
+        } catch {
+          // ignore
+        }
+        const be = e.event.browserEvent as MouseEvent | undefined;
+        const x = be?.clientX ?? (typeof e.event.posx === 'number' ? e.event.posx : 0);
+        const y = be?.clientY ?? (typeof e.event.posy === 'number' ? e.event.posy : 0);
+        setCtxMenu({ x, y });
+      })
+    );
+
     editorInstance.focus();
     onFindHandlersReady?.(getFindHandlers());
   };
@@ -368,6 +427,7 @@ const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function Editor
           formatOnPaste: true,
           smoothScrolling: true,
           padding: { top: 14, bottom: 14 },
+          contextmenu: false,
           find: {
             addExtraSpaceOnTop: false,
             autoFindInSelection: 'never',
@@ -375,6 +435,114 @@ const EditorPane = forwardRef<EditorPaneHandle, EditorPaneProps>(function Editor
           },
         }}
       />
+      {ctxMenu && (
+        <div
+          className="editor-context-backdrop"
+          onMouseDown={() => setCtxMenu(null)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setCtxMenu(null);
+          }}
+        >
+          <div
+            className="editor-context-menu"
+            style={{ left: ctxMenu.x, top: ctxMenu.y }}
+            onMouseDown={(e) => e.stopPropagation()}
+            role="menu"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              disabled={readOnly}
+              onClick={() => {
+                editorRef.current?.trigger('menu', 'editor.action.clipboardCutAction', null);
+                setCtxMenu(null);
+              }}
+            >
+              <span>剪切</span>
+              <kbd>Ctrl+X</kbd>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              onClick={() => {
+                editorRef.current?.trigger('menu', 'editor.action.clipboardCopyAction', null);
+                setCtxMenu(null);
+              }}
+            >
+              <span>复制</span>
+              <kbd>Ctrl+C</kbd>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              disabled={readOnly}
+              onClick={() => {
+                editorRef.current?.trigger('menu', 'editor.action.clipboardPasteAction', null);
+                setCtxMenu(null);
+              }}
+            >
+              <span>粘贴</span>
+              <kbd>Ctrl+V</kbd>
+            </button>
+            <div className="editor-context-sep" />
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              onClick={() => {
+                editorRef.current?.trigger('menu', 'editor.action.selectAll', null);
+                setCtxMenu(null);
+              }}
+            >
+              <span>全选</span>
+              <kbd>Ctrl+A</kbd>
+            </button>
+            <div className="editor-context-sep" />
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              onClick={() => {
+                setCtxMenu(null);
+                onRequestFindRef.current?.(false);
+              }}
+            >
+              <span>查找</span>
+              <kbd>Ctrl+F</kbd>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              disabled={readOnly}
+              onClick={() => {
+                setCtxMenu(null);
+                onRequestFindRef.current?.(true);
+              }}
+            >
+              <span>替换</span>
+              <kbd>Ctrl+H</kbd>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="editor-context-item"
+              disabled={readOnly}
+              onClick={() => {
+                setCtxMenu(null);
+                onRequestFormatRef.current?.();
+              }}
+            >
+              <span>格式化文档</span>
+              <kbd>Shift+Alt+F</kbd>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

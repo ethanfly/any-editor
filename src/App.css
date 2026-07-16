@@ -194,10 +194,10 @@ button:focus-visible {
 }
 
 .welcome-content {
-  width: min(520px, 100%);
+  width: min(640px, 100%);
   max-height: none;
   margin: auto 0;
-  padding: 28px 28px 24px;
+  padding: 28px 24px 24px;
   text-align: center;
   background: var(--app-surface);
   border: 1px solid var(--app-line);
@@ -251,22 +251,27 @@ button:focus-visible {
 
 .welcome-actions {
   display: flex;
-  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
   margin-bottom: 18px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .welcome-btn {
-  min-width: 128px;
-  padding: 10px 16px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 148px;
+  padding: 10px 12px;
   border: 1px solid transparent;
   border-radius: 999px;
   background: var(--app-surface-muted);
   color: var(--app-text);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  white-space: nowrap;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
@@ -294,17 +299,27 @@ button:focus-visible {
 
 .welcome-shortcuts {
   display: flex;
-  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.welcome-shortcuts::-webkit-scrollbar {
+  display: none;
 }
 
 .welcome-shortcuts span {
-  padding: 5px 10px;
+  flex: 0 0 auto;
+  padding: 5px 9px;
   color: var(--app-text-muted);
   background: var(--app-surface-muted);
   border-radius: 999px;
-  font-size: 0.8462rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .split-view {

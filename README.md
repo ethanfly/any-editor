@@ -19,22 +19,23 @@
 | --- | --- |
 | Markdown WYSIWYG | Typora 风格实时编辑，支持公式 / Mermaid 按需加载 |
 | 代码编辑器 | Monaco Editor：高亮、折叠、多光标、格式化 |
+| 中文右键菜单 | 编辑器内自定义右键：剪切/复制/粘贴/查找/替换/格式化 |
+| 应用内查找替换 | `Ctrl+F` / `Ctrl+H` 打开应用面板，不再调用浏览器原生搜索 |
 | 格式工具栏 | 加粗/标题/列表/链接/表格等 Markdown 快捷格式 |
 | JSON 格式化 | 一键美化 / 压缩，非法 JSON 给出错误提示 |
 | PDF 预览 | 内置 PDF.js，支持缩放与翻页 |
 | 图片预览 | 打开 png/jpg/gif/webp/svg 等，支持缩放查看 |
 | CSV 表格 | 表格视图与源码视图切换 |
 | 标签页管理 | 多标签、拖拽排序、横向滚动、自动定位当前标签 |
-| 文件树 | 新建/重命名/删除、右键菜单、懒加载目录 |
+| 文件树 | 「操作」二级菜单新建文件/文件夹，刷新，懒加载目录 |
 | 大纲导航 | Markdown 标题大纲，点击跳转 |
-| 查找替换 | 当前文件查找替换 |
 | 项目搜索 | 在工作区内全文搜索并跳转 |
 | 快速打开 | `Ctrl+P` 模糊打开文件 |
 | 命令面板 | `Ctrl+Shift+P` 集中执行常用操作 |
 | 自动保存 | 可配置间隔自动写盘 |
 | 本地历史 | 保存快照，支持回滚 |
 | 磁盘变更检测 | 外部修改提示，可比较差异 |
-| 深色模式 | 浅色 / 深色主题 |
+| 深色模式 | 浅色 / 深色主题全量适配 |
 | 界面字号 | 独立设置「编辑器字号」与「软件界面字号」 |
 | 工作区记忆 | 恢复打开目录、标签与窗口几何 |
 | 单实例运行 | 二次启动复用已有窗口 |
@@ -51,7 +52,8 @@
 | `Ctrl+W` | 关闭标签 |
 | `Ctrl+P` | 快速打开 |
 | `Ctrl+Shift+P` | 命令面板 |
-| `Ctrl+F` | 查找替换 |
+| `Ctrl+F` | 查找 |
+| `Ctrl+H` | 替换 |
 | `Ctrl+Shift+F` | 项目搜索 |
 | `Ctrl+B` / `Ctrl+I` | 加粗 / 斜体 |
 | `Shift+Alt+F` | 格式化文档 |
@@ -150,7 +152,8 @@ push main → Bump Version → 创建版本 Tag → Build & Release
 any-editor/
 ├── src/                         # React 前端
 │   ├── components/              # UI 组件
-│   │   ├── EditorPane.tsx       # Monaco 编辑器
+│   │   ├── EditorPane.tsx       # Monaco 编辑器 + 中文右键菜单
+│   │   ├── FindReplace.tsx      # 应用内查找替换
 │   │   ├── WysiwygEditor.tsx    # Markdown 实时编辑
 │   │   ├── MarkdownPreview.tsx  # Markdown 预览
 │   │   ├── PDFPreview.tsx       # PDF 预览

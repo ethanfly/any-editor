@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { FileEntry } from '../types';
 import './FileTree.css';
@@ -186,6 +186,8 @@ const FileTree: React.FC<FileTreeProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuState>(null);
   const [status, setStatus] = useState('');
+  const [opsOpen, setOpsOpen] = useState(false);
+  const opsRef = useRef<HTMLDivElement>(null);
 
   const loadTree = useCallback(async () => {
     if (!rootPath) return;
@@ -223,14 +225,27 @@ const FileTree: React.FC<FileTreeProps> = ({
       cancelled = true;
     };
   }, [rootPath, refreshKey]);
-
   useEffect(() => {
-    if (!menu) return;
-    const close = () => setMenu(null);
-    window.addEventListener('click', close);
-    return () => window.removeEventListener('click', close);
-  }, [menu]);
-
+    if (!menu && !opsOpen) return;
+    const close = (e: MouseEvent) => {
+      if (opsOpen && opsRef.current && !opsRef.current.contains(e.target as Node)) {
+        setOpsOpen(false);
+      }
+      if (menu) setMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpsOpen(false);
+        setMenu(null);
+      }
+    };
+    window.addEventListener('mousedown', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu, opsOpen]);
   const mutateDone = async () => {
     await loadTree();
     onTreeMutated?.();
@@ -295,25 +310,47 @@ const FileTree: React.FC<FileTreeProps> = ({
           文件浏览
         </span>
         <div className="file-tree-actions">
-          <button
-            className="icon-button"
-            onClick={() => void createIn(rootPath, false)}
-            title="新建文件"
-            type="button"
-          >
-            +文件
-          </button>
-          <button
-            className="icon-button"
-            onClick={() => void createIn(rootPath, true)}
-            title="新建文件夹"
-            type="button"
-          >
-            +目录
-          </button>
-          <button className="icon-button" onClick={onRootChange} title="切换目录" type="button">
-            目录
-          </button>
+          <div className={`file-tree-ops ${opsOpen ? 'open' : ''}`} ref={opsRef}>
+            <button
+              className={`icon-button ${opsOpen ? 'active' : ''}`}
+              onClick={() => setOpsOpen((v) => !v)}
+              title="新建操作"
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={opsOpen}
+            >
+              操作
+              <span className="file-tree-ops-caret" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+            {opsOpen && (
+              <div className="file-tree-ops-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="file-tree-ops-item"
+                  onClick={() => {
+                    setOpsOpen(false);
+                    void createIn(rootPath, false);
+                  }}
+                >
+                  新建文件
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="file-tree-ops-item"
+                  onClick={() => {
+                    setOpsOpen(false);
+                    void createIn(rootPath, true);
+                  }}
+                >
+                  新建文件夹
+                </button>
+              </div>
+            )}
+          </div>
           <button className="icon-button" onClick={() => void loadTree()} title="刷新" type="button">
             刷新
           </button>

@@ -45,6 +45,51 @@
   margin-left: auto;
 }
 
+.file-tree-ops {
+  position: relative;
+}
+
+.file-tree-ops-caret {
+  font-size: 0.75em;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.file-tree-ops-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  width: max-content;
+  min-width: 8.5rem;
+  padding: 4px;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+}
+
+.file-tree-ops-item {
+  width: 100%;
+  display: block;
+  min-height: 30px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-text);
+  cursor: pointer;
+  font-size: 0.8462rem;
+  font-weight: 650;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.file-tree-ops-item:hover {
+  background: var(--app-orange-soft);
+  color: var(--app-orange-strong);
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -73,7 +118,8 @@
   transition: opacity 140ms ease;
 }
 
-.icon-button:hover {
+.icon-button:hover,
+.icon-button.active {
   transform: translateY(-1px);
   background: var(--app-hover);
   border-color: rgba(241, 149, 63, 0.22);

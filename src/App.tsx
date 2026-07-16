@@ -1034,6 +1034,13 @@ const App: React.FC = () => {
       }
       if (e.key === 'f' || e.key === 'F') {
         e.preventDefault();
+        e.stopPropagation();
+        setFindOpen(true);
+        return;
+      }
+      if ((e.key === 'h' || e.key === 'H') && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
         setFindOpen(true);
         return;
       }
@@ -1100,8 +1107,8 @@ const App: React.FC = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [handleSave, handleSaveAs, handleNewFile, handleOpenFile, handleOpenFolder, handleTabClose, handleFormat, handleFormatDocument]);
 
   // Initial open
@@ -1457,6 +1464,8 @@ const App: React.FC = () => {
                 colorTheme={settings.theme}
                 readOnly={!!activeTab?.isReadonly}
                 onFindHandlersReady={setFindHandlers}
+                onRequestFind={() => setFindOpen(true)}
+                onRequestFormat={() => { void handleFormatDocument(); }}
               />
             )}
 
@@ -1483,6 +1492,8 @@ const App: React.FC = () => {
                 colorTheme={settings.theme}
                 readOnly={!!activeTab?.isReadonly}
                 onFindHandlersReady={setFindHandlers}
+                onRequestFind={() => setFindOpen(true)}
+                onRequestFormat={() => { void handleFormatDocument(); }}
               />
             )}
 
@@ -1509,6 +1520,8 @@ const App: React.FC = () => {
                     colorTheme={settings.theme}
                     readOnly={!!activeTab?.isReadonly}
                     onFindHandlersReady={setFindHandlers}
+                onRequestFind={() => setFindOpen(true)}
+                onRequestFormat={() => { void handleFormatDocument(); }}
                   />
                 </div>
                 <div className="split-preview">
