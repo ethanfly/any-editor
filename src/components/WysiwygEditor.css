@@ -1,291 +1,40 @@
+/* Shell + contentEditable-only rules.
+ * Shared document look: styles/markdownDoc.css (.md-doc)
+ */
+
 .wysiwyg-editor {
   height: 100%;
   overflow: hidden;
   background: var(--app-surface);
 }
 
-.wysiwyg-content {
+.wysiwyg-content.md-doc {
   height: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 32px 48px;
   overflow-y: auto;
   outline: none;
-  font-size: 15px;
-  line-height: 1.88;
-  color: #30363b;
   cursor: text;
+  /* override shared padding slightly for editor chrome */
+  padding: 40px 48px;
+  box-sizing: border-box;
 }
 
-.wysiwyg-content:focus {
+.wysiwyg-content.md-doc:focus {
   outline: none;
 }
 
-/* ===== Block Elements ===== */
-
-.wysiwyg-content .md-line {
+/* Editable line minimum height (preview paragraphs don't need this) */
+.wysiwyg-content.md-doc .md-line {
   min-height: 1.6em;
-  margin-bottom: 4px;
 }
 
-.wysiwyg-content .md-line[data-type="p"] {
-  margin-bottom: 8px;
+/* contentEditable caret targets for empty paragraphs */
+.wysiwyg-content.md-doc .md-line[data-type='p']:empty::before,
+.wysiwyg-content.md-doc .md-line[data-type='p'] > br:only-child {
+  content: '';
 }
 
-.wysiwyg-content .md-line[data-type="h1"] {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 28px 0 14px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--app-line);
-  color: var(--app-text);
-  letter-spacing: -0.4px;
-}
-
-.wysiwyg-content .md-line[data-type="h2"] {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 24px 0 12px;
-  color: var(--app-text);
-  letter-spacing: -0.3px;
-}
-
-.wysiwyg-content .md-line[data-type="h3"] {
-  font-size: 19px;
-  font-weight: 700;
-  margin: 20px 0 10px;
-  color: var(--app-text);
-}
-
-.wysiwyg-content .md-line[data-type="h4"] {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 16px 0 8px;
-}
-
-.wysiwyg-content .md-line[data-type="h5"] {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 14px 0 6px;
-  color: var(--app-text-soft);
-}
-
-.wysiwyg-content .md-line[data-type="h6"] {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 12px 0 4px;
-  color: var(--app-text-muted);
-}
-
-/* Lists */
-.wysiwyg-content .md-line[data-type="li"] {
-  padding-left: 24px;
-  position: relative;
-  margin-bottom: 2px;
-}
-
-.wysiwyg-content .md-line[data-type="li"][data-list="ul"]::before {
-  content: '•';
-  position: absolute;
-  left: 8px;
-  color: var(--app-orange-strong);
-}
-
-.wysiwyg-content .md-line[data-type="li"][data-list="ol"] {
-  counter-increment: md-ol;
-}
-
-.wysiwyg-content .md-line[data-type="li"][data-list="ol"]::before {
-  content: counter(md-ol) '.';
-  position: absolute;
-  left: 4px;
-  min-width: 16px;
-  color: var(--app-orange-strong);
-  font-weight: 700;
-}
-
-/* Task list */
-.wysiwyg-content .md-task {
-  padding-left: 24px;
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.wysiwyg-content .md-task input[type="checkbox"] {
-  flex-shrink: 0;
-  margin-top: 5px;
-  accent-color: var(--app-orange-strong);
-}
-
-.wysiwyg-content .md-task-text {
-  flex: 1;
-}
-
-/* Blockquote */
-.wysiwyg-content .md-blockquote {
-  margin: 14px 0;
-  padding: 10px 18px;
-  background: var(--app-quote-bg);
-  border-left: 4px solid var(--app-orange-strong);
-  border-radius: 0 8px 8px 0;
-  color: var(--app-text-soft);
-}
-
-/* Code block */
-.wysiwyg-content .md-code-block {
-  margin: 16px 0;
-  padding: 16px 20px;
-  background: #1e293b;
-  border-radius: 12px;
-  overflow-x: auto;
-}
-
-.wysiwyg-content .md-code-block code {
-  color: #e2e8f0;
-  font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.65;
-  white-space: pre;
-}
-
-/* Horizontal rule */
-.wysiwyg-content .md-hr {
-  margin: 24px 0;
-  border: none;
-  height: 2px;
-  background: var(--app-line);
-  border-radius: 1px;
-}
-
-/* ===== Inline Elements ===== */
-
-.wysiwyg-content .md-bold {
-  font-weight: 700;
-  color: var(--app-text);
-}
-
-.wysiwyg-content .md-italic {
-  font-style: italic;
-  color: var(--app-text-soft);
-}
-
-.wysiwyg-content .md-strike {
-  text-decoration: line-through;
-  color: var(--app-text-muted);
-}
-
-.wysiwyg-content .md-highlight {
-  background: var(--app-orange-soft);
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
-.wysiwyg-content .md-code {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--app-code-bg);
-  color: #db5f42;
-  font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  font-size: 13px;
-}
-
-.wysiwyg-content .md-superscript {
-  vertical-align: super;
-  font-size: 0.8em;
-}
-
-.wysiwyg-content .md-subscript {
-  vertical-align: sub;
-  font-size: 0.8em;
-}
-
-.wysiwyg-content .md-link {
-  color: var(--app-orange-strong);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 140ms ease;
-}
-
-.wysiwyg-content .md-link:hover {
-  border-bottom-color: var(--app-orange-strong);
-}
-
-.wysiwyg-content .md-image {
-  max-width: 100%;
-  border-radius: 10px;
-  margin: 10px 0;
-}
-
-/* Table */
-.wysiwyg-content .md-table {
-  width: 100%;
-  margin: 16px 0;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.wysiwyg-content .md-table th,
-.wysiwyg-content .md-table td {
-  border: 1px solid var(--app-line);
-  padding: 8px 12px;
-}
-
-.wysiwyg-content .md-table th {
-  background: var(--app-surface-muted);
-  color: var(--app-text);
-  font-weight: 700;
-}
-
-.wysiwyg-content .md-table tr:nth-child(even) {
-  background: var(--app-surface-soft);
-}
-
-.wysiwyg-content .md-image-block {
-  margin: 12px 0;
-  text-align: center;
-}
-
-/* Raw HTML blocks — rendered effect, not source dump */
-.wysiwyg-content .md-raw-html {
-  min-height: auto;
-  margin: 10px 0;
-}
-
-.wysiwyg-content .md-raw-html details {
-  border: 1px solid var(--app-line);
-  border-radius: var(--app-radius-sm);
-  padding: 10px 14px;
-  background: var(--app-surface-soft);
-}
-
-.wysiwyg-content .md-raw-html summary {
-  cursor: pointer;
-  font-weight: 700;
-  color: var(--app-orange-strong);
-}
-
-.wysiwyg-content .md-raw-html kbd {
-  display: inline-block;
-  padding: 1px 6px;
-  border: 1px solid var(--app-line-strong);
-  border-bottom-width: 2px;
-  border-radius: 6px;
-  background: var(--app-surface-muted);
-  font-family: 'Cascadia Mono', 'Consolas', monospace;
-  font-size: 0.9em;
-}
-
-.wysiwyg-content .md-raw-html mark {
-  background: rgba(255, 180, 107, 0.35);
-  color: inherit;
-  border-radius: 3px;
-  padding: 0 3px;
-}
-
-/* ===== Selection ===== */
-
-.wysiwyg-content ::selection {
-  background: rgba(255, 180, 107, 0.36);
-  color: var(--app-text);
+/* Prevent editing mermaid/math chrome */
+.wysiwyg-content.md-doc .md-mermaid-block,
+.wysiwyg-content.md-doc .md-math-block {
+  user-select: text;
 }

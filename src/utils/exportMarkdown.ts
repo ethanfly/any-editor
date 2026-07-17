@@ -1,7 +1,8 @@
-import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { invoke } from '@tauri-apps/api/core';
 import { isAbsolutePath, isExternalUrl, resolveFileRef } from './mediaUrl';
+import { MARKDOWN_PURIFY } from './markdownExtensions';
+import { renderMarkdownDocument } from './markdownRender';
 
 export type ExportKind = 'markdown' | 'html' | 'text';
 
@@ -132,7 +133,8 @@ export async function embedLocalImages(
 }
 
 const SANITIZE_OPTS = {
-  ADD_ATTR: ['target', 'rel', 'align', 'width', 'height', 'class', 'id', 'colspan', 'rowspan'],
+  ADD_TAGS: [...MARKDOWN_PURIFY.ADD_TAGS],
+  ADD_ATTR: [...MARKDOWN_PURIFY.ADD_ATTR, 'colspan', 'rowspan'],
 };
 
 function sanitizeHtml(html: string): string {
@@ -208,8 +210,8 @@ export async function contentToHtmlDocument(
   let bodyHtml: string;
 
   if (kind === 'markdown') {
-    const raw = marked.parse(content, { async: false }) as string;
-    bodyHtml = await embedLocalImages(sanitizeHtml(raw), options.filePath);
+    const raw = await renderMarkdownDocument(content, { filePath: options.filePath });
+    bodyHtml = await embedLocalImages(raw, options.filePath);
   } else if (kind === 'html') {
     bodyHtml = await embedLocalImages(sanitizeHtml(content), options.filePath);
   } else {
@@ -221,9 +223,9 @@ export async function contentToHtmlDocument(
 }
 
 /** @deprecated Prefer contentToHtmlDocument — kept for callers that only need sync md without images. */
-export function markdownToHtmlDocument(title: string, markdown: string): string {
-  const body = marked.parse(markdown, { async: false }) as string;
-  return wrapHtmlDocument(title, sanitizeHtml(body), 'markdown');
+export async function markdownToHtmlDocument(title: string, markdown: string): Promise<string> {
+  const body = await renderMarkdownDocument(markdown);
+  return wrapHtmlDocument(title, body, 'markdown');
 }
 
 function waitForImages(doc: Document, timeoutMs = 8000): Promise<void> {

@@ -1,3 +1,8 @@
+import {
+  MATH_BLOCK_SNIPPET,
+} from './markdownExtensions';
+import { FLOWCHART_SNIPPET, SEQUENCE_SNIPPET } from './mermaidDiagram';
+
 export type FormatAction =
   | 'bold'
   | 'italic'
@@ -16,6 +21,12 @@ export type FormatAction =
   | 'codeblock'
   | 'hr'
   | 'table'
+  | 'flowchart'
+  | 'sequence'
+  | 'math'
+  | 'mathInline'
+  | 'sup'
+  | 'sub'
   | 'formatDoc';
 
 export interface TextSelection {
@@ -232,6 +243,18 @@ export function applyMarkdownFormat(
       return insertBlock(content, safeSel, '---\n');
     case 'table':
       return insertBlock(content, safeSel, TABLE_SNIPPET);
+    case 'flowchart':
+      return insertBlock(content, safeSel, FLOWCHART_SNIPPET);
+    case 'sequence':
+      return insertBlock(content, safeSel, SEQUENCE_SNIPPET);
+    case 'math':
+      return insertBlock(content, safeSel, MATH_BLOCK_SNIPPET);
+    case 'mathInline':
+      return wrapInline(content, safeSel, '$', '$', 'E=mc^2');
+    case 'sup':
+      return wrapInline(content, safeSel, '^', '^', '上标');
+    case 'sub':
+      return wrapInline(content, safeSel, '~', '~', '下标');
     case 'formatDoc': {
       const next = formatMarkdownDocument(content);
       return { content: next, selection: { start: 0, end: 0 } };
@@ -259,5 +282,11 @@ export const FORMAT_LABELS: Record<FormatAction, string> = {
   codeblock: '代码块',
   hr: '分隔线',
   table: '表格',
+  flowchart: '流程图',
+  sequence: '时序图',
+  math: '公式块',
+  mathInline: '行内公式',
+  sup: '上标',
+  sub: '下标',
   formatDoc: '格式化文档',
 };

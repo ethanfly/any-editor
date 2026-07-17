@@ -2,6 +2,17 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import hljs from 'highlight.js/lib/common';
 import DOMPurify from 'dompurify';
 import { rewriteHtmlImageSources, toDisplaySrc } from '../utils/mediaUrl';
+import {
+  renderMathInRoot,
+  wysiwygMathBlockHtml,
+  wysiwygMathInlineHtml,
+  wysiwygMermaidBlockHtml,
+} from '../utils/markdownExtensions';
+import {
+  renderMermaidInRoot,
+  shouldRenderAsMermaid,
+} from '../utils/mermaidDiagram';
+import '../styles/markdownDoc.css';
 import './WysiwygEditor.css';
 
 interface WysiwygEditorProps {
@@ -120,6 +131,91 @@ function looksLikeHtmlLine(line: string): boolean {
 }
 
 /**
+ * Split a GFM table row into cells without breaking on:
+ * - escaped pipes `\|`
+ * - pipes inside `inline code`
+ * - pipes inside HTML tags `<span title="a|b">`
+ */
+function splitTableRowCells(row: string): string[] {
+  let s = row.trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|')) s = s.slice(0, -1);
+
+  const cells: string[] = [];
+  let cur = '';
+  let inCode = false;
+  let i = 0;
+
+  while (i < s.length) {
+    const ch = s[i];
+
+    // inline code spans
+    if (ch === '`' && !inCode) {
+      inCode = true;
+      cur += ch;
+      i += 1;
+      continue;
+    }
+    if (ch === '`' && inCode) {
+      inCode = false;
+      cur += ch;
+      i += 1;
+      continue;
+    }
+
+    // skip whole HTML tags so attribute pipes never split cells
+    if (!inCode && ch === '<' && /[a-zA-Z/!?]/.test(s[i + 1] || '')) {
+      const close = s.indexOf('>', i + 1);
+      if (close !== -1) {
+        cur += s.slice(i, close + 1);
+        i = close + 1;
+        continue;
+      }
+    }
+
+    // escaped pipe → literal |
+    if (!inCode && ch === '\\' && s[i + 1] === '|') {
+      cur += '|';
+      i += 2;
+      continue;
+    }
+
+    if (!inCode && ch === '|') {
+      cells.push(cur.trim());
+      cur = '';
+      i += 1;
+      continue;
+    }
+
+    cur += ch;
+    i += 1;
+  }
+  cells.push(cur.trim());
+  return cells;
+}
+
+function isTableSeparatorRow(row: string): boolean {
+  const cells = splitTableRowCells(row);
+  if (!cells.length) return false;
+  return cells.every((c) => /^:?-{1,}:?$/.test(c.replace(/\s+/g, '')));
+}
+
+function escapeTableCellMarkdown(text: string): string {
+  return text
+    .replace(/\r?\n/g, ' ')
+    .replace(/\|/g, '\\|');
+}
+
+function parseTableAlignments(separatorRow: string): string[] {
+  return splitTableRowCells(separatorRow).map((cell) => {
+    const c = cell.replace(/\s+/g, '');
+    if (c.startsWith(':') && c.endsWith(':')) return 'center';
+    if (c.endsWith(':')) return 'right';
+    return 'left';
+  });
+}
+
+/**
  * Process a plain-text segment with Markdown inline syntax (no raw HTML tags).
  */
 function parsePlainInlineMarkdown(text: string): string {
@@ -129,6 +225,16 @@ function parsePlainInlineMarkdown(text: string): string {
   working = working.replace(/`([^`\n]+?)`/g, (_match, code: string) => {
     const idx = codeSpans.push(`<code class="md-code">${escapeHtml(code)}</code>`) - 1;
     return `CODE${idx}`;
+  });
+
+  const mathSpans: string[] = [];
+  working = working.replace(/\$\$([\s\S]+?)\$\$/g, (_m, expr: string) => {
+    const idx = mathSpans.push(wysiwygMathBlockHtml(expr.trim())) - 1;
+    return `MATH${idx}`;
+  });
+  working = working.replace(/(^|[^\\$])\$([^\n$]+?)\$/g, (_m, prefix: string, expr: string) => {
+    const idx = mathSpans.push(wysiwygMathInlineHtml(expr.trim())) - 1;
+    return `${prefix}MATH${idx}`;
   });
 
   working = decodeEscapes(working);
@@ -174,6 +280,7 @@ function parsePlainInlineMarkdown(text: string): string {
     .replace(/(?<!~)~([^~\n]+?)~(?!~)/g, '<sub class="md-subscript">$1</sub>');
 
   working = working.replace(/CODE(\d+)/g, (_m, idx: string) => codeSpans[Number(idx)] ?? '');
+  working = working.replace(/MATH(\d+)/g, (_m, idx: string) => mathSpans[Number(idx)] ?? '');
   working = working.split(BR_SENTINEL).join('<br>');
   return working;
 }
@@ -375,9 +482,14 @@ function parseMarkdownToHtml(md: string, filePath?: string): string {
         codeLanguage = fenceMatch[1].trim();
         codeLines = [];
       } else {
-        result.push(
-          `<pre id="block-code-${headingIndex}" class="md-code-block" data-lang="${codeLanguage}"><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`
-        );
+        const body = codeLines.join('\n');
+        if (shouldRenderAsMermaid(codeLanguage, body)) {
+          result.push(wysiwygMermaidBlockHtml(codeLanguage, body, headingIndex));
+        } else {
+          result.push(
+            `<pre id="block-code-${headingIndex}" class="md-code-block" data-lang="${codeLanguage}"><code>${escapeHtml(body)}</code></pre>`
+          );
+        }
         headingIndex += 1;
         inCodeBlock = false;
         codeLanguage = '';
@@ -434,11 +546,37 @@ function parseMarkdownToHtml(md: string, filePath?: string): string {
       continue;
     }
 
-    // Blockquote
-    if (line.startsWith('> ')) {
-      result.push(
-        `<blockquote class="md-blockquote">${parseInlineMarkdown(line.slice(2))}</blockquote>`
-      );
+    // Blockquote (one or more consecutive > lines — matches GFM / marked)
+    if (/^>\s?/.test(line)) {
+      const quoteParts: string[] = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        quoteParts.push(lines[i].replace(/^>\s?/, ''));
+        i += 1;
+      }
+      const quoteHtml = quoteParts
+        .map((part) => (part.trim() === '' ? '<br>' : parseInlineMarkdown(part)))
+        .join('<br>');
+      result.push(`<blockquote class="md-blockquote">${quoteHtml}</blockquote>`);
+      continue;
+    }
+
+    // Display math block $$ ... $$
+    if (line.trim() === '$$') {
+      const mathLines: string[] = [];
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim() !== '$$') {
+        mathLines.push(lines[j]);
+        j += 1;
+      }
+      if (j < lines.length && lines[j].trim() === '$$') {
+        result.push(wysiwygMathBlockHtml(mathLines.join('\n')));
+        i = j + 1;
+        continue;
+      }
+    }
+    const singleLineMath = line.match(/^\$\$([\s\S]+?)\$\$$/);
+    if (singleLineMath) {
+      result.push(wysiwygMathBlockHtml(singleLineMath[1]));
       i += 1;
       continue;
     }
@@ -465,60 +603,47 @@ function parseMarkdownToHtml(md: string, filePath?: string): string {
         }
       }
 
-      // Need at least 2 rows (header + separator + optional data)
+      // Need at least header + separator
       if (tableRows.length >= 2) {
-        const hasSeparator = tableRows.some((row, idx) =>
-          idx > 0 && /^\|?[\s:-]+\|[\s|:-]+\|?$/.test(row.trim())
-        );
-        if (hasSeparator) {
-          // Find the separator row index
-          let sepIdx = -1;
-          for (let k = 1; k < tableRows.length; k++) {
-            if (/^\|?[\s:-]+\|[\s|:-]+\|?$/.test(tableRows[k].trim())) {
-              sepIdx = k;
-              break;
-            }
+        let sepIdx = -1;
+        for (let k = 1; k < tableRows.length; k++) {
+          if (isTableSeparatorRow(tableRows[k])) {
+            sepIdx = k;
+            break;
           }
+        }
 
-          // Parse table
-          const parseRow = (row: string): string[] => {
-            return row.split('|')
-              .map(c => c.trim())
-              .filter(c => c !== '' && !/^[-:]+$/.test(c));
+        if (sepIdx > 0) {
+          const alignments = parseTableAlignments(tableRows[sepIdx]);
+          // Column count from header (GFM): pad/truncate rows to this width
+          const headerCells = splitTableRowCells(tableRows[0]);
+          const colCount = Math.max(headerCells.length, alignments.length, 1);
+
+          const padCells = (cells: string[]): string[] => {
+            const next = cells.slice(0, colCount);
+            while (next.length < colCount) next.push('');
+            return next;
           };
 
-          // Determine alignment from separator row
-          const alignRow = sepIdx >= 0 ? tableRows[sepIdx] : '';
-          const alignments: string[] = [];
-          if (alignRow) {
-            alignRow.split('|').forEach(cell => {
-              const c = cell.trim();
-              if (c.startsWith(':') && c.endsWith(':')) alignments.push('center');
-              else if (c.endsWith(':')) alignments.push('right');
-              else alignments.push('left');
-            });
-          }
-
-          let html = '<table class="md-table"><thead><tr>';
-          // Header row(s): all rows before separator
+          let html = '<div class="md-table-wrap"><table class="md-table"><thead>';
+          // Header rows before separator (usually one)
           for (let k = 0; k < sepIdx; k++) {
-            const cells = parseRow(tableRows[k]);
-            cells.forEach((cell, ci) => {
+            html += '<tr>';
+            padCells(splitTableRowCells(tableRows[k])).forEach((cell, ci) => {
               html += `<th style="text-align:${alignments[ci] || 'left'}">${parseInlineMarkdown(cell)}</th>`;
             });
+            html += '</tr>';
           }
-          html += '</tr></thead><tbody>';
+          html += '</thead><tbody>';
 
-          // Data rows: after separator
           for (let k = sepIdx + 1; k < tableRows.length; k++) {
             html += '<tr>';
-            const cells = parseRow(tableRows[k]);
-            cells.forEach((cell, ci) => {
+            padCells(splitTableRowCells(tableRows[k])).forEach((cell, ci) => {
               html += `<td style="text-align:${alignments[ci] || 'left'}">${parseInlineMarkdown(cell)}</td>`;
             });
             html += '</tr>';
           }
-          html += '</tbody></table>';
+          html += '</tbody></table></div>';
           result.push(html);
           i = j;
           continue;
@@ -594,17 +719,50 @@ function parseMarkdownToHtml(md: string, filePath?: string): string {
       continue;
     }
 
-    // Default paragraph
-    result.push(
-      `<div class="md-line" data-type="p">${parseInlineMarkdown(line)}</div>`
-    );
+    // Default paragraph: join consecutive non-blank lines (soft wrap), matching marked breaks:false
+    if (line.trim() !== '' && !looksLikeHtmlLine(line) && !line.match(/^#{1,6}\s+/) && !line.match(/^([-*])\s+/) && !line.match(/^\d+\.\s+/) && !line.match(/^```/) && !line.match(/^>\s?/) && !/^(---|\*\*\*|___)$/.test(line.trim())) {
+      const paraLines: string[] = [line];
+      let j = i + 1;
+      while (j < lines.length) {
+        const next = lines[j];
+        if (next.trim() === '') break;
+        if (
+          looksLikeHtmlLine(next) ||
+          /^#{1,6}\s+/.test(next) ||
+          /^([-*])\s+/.test(next) ||
+          /^\d+\.\s+/.test(next) ||
+          /^```/.test(next) ||
+          /^>\s?/.test(next) ||
+          /^(---|\*\*\*|___)$/.test(next.trim()) ||
+          next.trim() === '$$' ||
+          ((next.includes('|') && (next.trim().startsWith('|') || next.trim().endsWith('|'))))
+        ) {
+          break;
+        }
+        paraLines.push(next);
+        j += 1;
+      }
+      // Soft-wrap join with space (CommonMark / marked breaks:false)
+      const joined = paraLines.map((l) => l.trimEnd()).join(' ');
+      result.push(`<div class="md-line" data-type="p">${parseInlineMarkdown(joined)}</div>`);
+      i = j;
+      continue;
+    }
+
+    // Fallback single line
+    result.push(`<div class="md-line" data-type="p">${parseInlineMarkdown(line)}</div>`);
     i += 1;
   }
 
   if (inCodeBlock) {
-    result.push(
-      `<pre class="md-code-block" data-lang="${codeLanguage}"><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`
-    );
+    const body = codeLines.join('\n');
+    if (shouldRenderAsMermaid(codeLanguage, body)) {
+      result.push(wysiwygMermaidBlockHtml(codeLanguage, body, headingIndex));
+    } else {
+      result.push(
+        `<pre class="md-code-block" data-lang="${codeLanguage}"><code>${escapeHtml(body)}</code></pre>`
+      );
+    }
   }
 
   const joined = result.join('');
@@ -650,6 +808,24 @@ function htmlToMarkdown(html: string): string {
     const dataType = el.getAttribute('data-type') || '';
     const children = Array.from(el.childNodes).map(processNode).join('');
 
+    // Mermaid diagram block
+    if (className.includes('md-mermaid-block') || dataType === 'mermaid') {
+      const lang = el.getAttribute('data-lang') || 'mermaid';
+      const encoded = el.getAttribute('data-mermaid-source') || el.getAttribute('data-raw-source') || '';
+      let source = '';
+      if (encoded) {
+        try {
+          source = decodeURIComponent(encoded);
+        } catch {
+          source = encoded;
+        }
+      }
+      if (!source) {
+        source = el.querySelector('.md-mermaid-source code')?.textContent || el.textContent || '';
+      }
+      return `\`\`\`${lang}\n${source}\n\`\`\`\n`;
+    }
+
     // Code block
     if (tag === 'pre' && className.includes('md-code-block')) {
       const lang = el.getAttribute('data-lang') || '';
@@ -671,6 +847,16 @@ function htmlToMarkdown(html: string): string {
         }
         return `${el.innerHTML}\n`;
       }
+      if (dataType === 'math') {
+        const encoded = el.getAttribute('data-expr') || '';
+        let expr = '';
+        try {
+          expr = decodeURIComponent(encoded);
+        } catch {
+          expr = encoded;
+        }
+        return `$$\n${expr}\n$$\n`;
+      }
       switch (dataType) {
         case 'h1': return `# ${children}\n`;
         case 'h2': return `## ${children}\n`;
@@ -687,17 +873,38 @@ function htmlToMarkdown(html: string): string {
           const checked = el.getAttribute('data-checked') === 'true';
           return `- [${checked ? 'x' : ' '}] ${children}\n`;
         }
-        case 'p':
+        case 'p': {
+          // Soft-wrapped paragraphs stay single markdown paragraphs
+          const text = children.replace(/\n+/g, ' ').trimEnd();
+          return `${text}\n`;
+        }
         default:
           return `${children}\n`;
       }
     }
 
     // Blockquote
-    if (tag === 'blockquote') return `> ${children}\n`;
+    if (tag === 'blockquote') {
+      const text = (el as HTMLElement).innerText || children;
+      const lines = text.split(/\r?\n/).map((l) => l.trimEnd());
+      if (!lines.length) return `> \n`;
+      return lines.map((l) => `> ${l}`).join('\n') + '\n';
+    }
 
     // HR
     if (tag === 'hr') return '---\n';
+
+    // Inline math
+    if (className.includes('md-math-inline') || (className.includes('md-math') && el.getAttribute('data-display') === '0')) {
+      const encoded = el.getAttribute('data-expr') || '';
+      let expr = '';
+      try {
+        expr = decodeURIComponent(encoded);
+      } catch {
+        expr = encoded;
+      }
+      return `$${expr}$`;
+    }
 
     // Inline formatting
     if (className.includes('md-bold') || tag === 'strong' || tag === 'b') return `**${children}**`;
@@ -725,8 +932,15 @@ function htmlToMarkdown(html: string): string {
     if (tag === 'input') return '';
     if (tag === 'span') return children;
 
+    // Table wrapper from md-table-wrap
+    if (tag === 'div' && className.includes('md-table-wrap')) {
+      const table = el.querySelector('table');
+      if (table) return processNode(table);
+      return children;
+    }
+
     // Table serialization
-    if (tag === 'table' && className.includes('md-table')) {
+    if (tag === 'table' && (className.includes('md-table') || el.closest('.md-table-wrap'))) {
       const rows: string[] = [];
       const thead = el.querySelector('thead');
       
@@ -746,7 +960,12 @@ function htmlToMarkdown(html: string): string {
         const cells = row.querySelectorAll('th, td');
         const cellTexts: string[] = [];
         cells.forEach((cell) => {
-          cellTexts.push(processNode(cell).trim());
+          // Prefer data-raw-source style? Keep markdown from inline nodes, escape |
+          const raw = Array.from(cell.childNodes)
+            .map((n) => processNode(n))
+            .join('')
+            .trim();
+          cellTexts.push(escapeTableCellMarkdown(raw));
         });
         rows.push('| ' + cellTexts.join(' | ') + ' |');
 
@@ -805,6 +1024,13 @@ function applySyntaxHighlighting(root: HTMLElement): void {
   });
 }
 
+async function applyRichRenderers(root: HTMLElement, signal?: { cancelled: boolean }): Promise<void> {
+  applySyntaxHighlighting(root);
+  await renderMathInRoot(root, { signal });
+  if (signal?.cancelled) return;
+  await renderMermaidInRoot(root, { signal });
+}
+
 /* ============================================================
  *  HEADING ID SYNC
  * ============================================================ */
@@ -843,13 +1069,17 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
     const editor = editorRef.current;
     if (!editor) return;
 
+    const signal = { cancelled: false };
+
     if (!initializedRef.current) {
       editor.innerHTML = parseMarkdownToHtml(content, filePath);
       syncHeadingIds(editor);
-      applySyntaxHighlighting(editor);
+      void applyRichRenderers(editor, signal);
       baselineRef.current = content;
       initializedRef.current = true;
-      return;
+      return () => {
+        signal.cancelled = true;
+      };
     }
 
     if (isInternalChange) return;
@@ -858,9 +1088,12 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
     if (content !== baselineRef.current) {
       editor.innerHTML = parseMarkdownToHtml(content, filePath);
       syncHeadingIds(editor);
-      applySyntaxHighlighting(editor);
+      void applyRichRenderers(editor, signal);
       baselineRef.current = content;
     }
+    return () => {
+      signal.cancelled = true;
+    };
   }, [content, filePath, isInternalChange]);
 
   useEffect(() => {
@@ -1084,7 +1317,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
     <div className="wysiwyg-editor">
       <div
         ref={editorRef}
-        className="wysiwyg-content"
+        className="wysiwyg-content md-doc"
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}

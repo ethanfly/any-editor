@@ -1,0 +1,496 @@
+/**
+ * Shared document look for:
+ * - Preview / Split right pane (.markdown-body.md-doc)
+ * - WYSIWYG (.wysiwyg-content.md-doc)
+ *
+ * Goal: same typography, spacing, code, tables, mermaid, math across modes.
+ */
+
+/* ===== Base page ===== */
+.md-doc {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 48px;
+  color: var(--app-text);
+  line-height: 1.88;
+  font-size: 15px;
+}
+
+/* ===== Headings ===== */
+.md-doc h1,
+.md-doc h2,
+.md-doc h3,
+.md-doc h4,
+.md-doc h5,
+.md-doc h6,
+.md-doc .md-line[data-type='h1'],
+.md-doc .md-line[data-type='h2'],
+.md-doc .md-line[data-type='h3'],
+.md-doc .md-line[data-type='h4'],
+.md-doc .md-line[data-type='h5'],
+.md-doc .md-line[data-type='h6'] {
+  margin-top: 32px;
+  margin-bottom: 16px;
+  color: var(--app-text);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.md-doc h1:first-child,
+.md-doc h2:first-child,
+.md-doc h3:first-child,
+.md-doc .md-line[data-type='h1']:first-child,
+.md-doc .md-line[data-type='h2']:first-child,
+.md-doc .md-line[data-type='h3']:first-child {
+  margin-top: 0;
+}
+
+.md-doc h1,
+.md-doc .md-line[data-type='h1'] {
+  font-size: 32px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--app-line);
+  letter-spacing: -0.4px;
+}
+
+.md-doc h2,
+.md-doc .md-line[data-type='h2'] {
+  font-size: 24px;
+  letter-spacing: -0.3px;
+}
+
+.md-doc h3,
+.md-doc .md-line[data-type='h3'] {
+  font-size: 19px;
+}
+
+.md-doc h4,
+.md-doc .md-line[data-type='h4'] {
+  font-size: 16px;
+}
+
+.md-doc h5,
+.md-doc .md-line[data-type='h5'] {
+  font-size: 15px;
+  color: var(--app-text-soft);
+}
+
+.md-doc h6,
+.md-doc .md-line[data-type='h6'] {
+  font-size: 14px;
+  color: var(--app-text-muted);
+}
+
+/* ===== Paragraph / generic line ===== */
+.md-doc p,
+.md-doc .md-line[data-type='p'] {
+  margin: 0 0 16px;
+}
+
+/* ===== Inline code ===== */
+.md-doc :not(pre) > code,
+.md-doc .md-code {
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--app-code-bg);
+  color: #db5f42;
+  font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+/* ===== Code blocks ===== */
+.md-doc pre,
+.md-doc .md-code-block {
+  margin: 20px 0;
+  padding: 20px 24px;
+  overflow-x: auto;
+  background: #1e293b;
+  border-radius: 12px;
+  line-height: 1.65;
+}
+
+.md-doc pre code,
+.md-doc .md-code-block code {
+  padding: 0;
+  background: none;
+  color: #e2e8f0;
+  font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+  white-space: pre;
+}
+
+/* highlight.js tokens on dark code bg */
+.md-doc .hljs {
+  color: #e2e8f0;
+  background: transparent;
+}
+.md-doc .hljs-comment,
+.md-doc .hljs-quote {
+  color: #94a3b8;
+  font-style: italic;
+}
+.md-doc .hljs-keyword,
+.md-doc .hljs-selector-tag,
+.md-doc .hljs-literal,
+.md-doc .hljs-section,
+.md-doc .hljs-link {
+  color: #c792ea;
+}
+.md-doc .hljs-string,
+.md-doc .hljs-doctag,
+.md-doc .hljs-title,
+.md-doc .hljs-name,
+.md-doc .hljs-type,
+.md-doc .hljs-attribute {
+  color: #c3e88d;
+}
+.md-doc .hljs-number,
+.md-doc .hljs-symbol,
+.md-doc .hljs-bullet {
+  color: #f78c6c;
+}
+.md-doc .hljs-built_in,
+.md-doc .hljs-builtin-name {
+  color: #82aaff;
+}
+.md-doc .hljs-meta,
+.md-doc .hljs-deletion {
+  color: #f07178;
+}
+.md-doc .hljs-addition {
+  color: #c3e88d;
+}
+.md-doc .hljs-variable,
+.md-doc .hljs-template-variable {
+  color: #f07178;
+}
+
+/* ===== Blockquote ===== */
+.md-doc blockquote,
+.md-doc .md-blockquote {
+  margin: 20px 0;
+  padding: 14px 20px;
+  background: var(--app-quote-bg);
+  border-left: 4px solid var(--app-orange-strong);
+  border-radius: 0 8px 8px 0;
+  color: var(--app-text-soft);
+}
+
+.md-doc blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== Links ===== */
+.md-doc a,
+.md-doc .md-link {
+  color: var(--app-orange-strong);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 140ms ease;
+}
+
+.md-doc a:hover,
+.md-doc .md-link:hover {
+  border-bottom-color: var(--app-orange-strong);
+}
+
+/* ===== Tables ===== */
+.md-doc .md-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 20px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.md-doc table,
+.md-doc .md-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: auto;
+  max-width: 100%;
+}
+
+/* preview path (marked) has no wrap div — keep outer margin */
+.md-doc > table,
+.markdown-body > table {
+  margin: 20px 0;
+}
+
+.md-doc th,
+.md-doc td,
+.md-doc .md-table th,
+.md-doc .md-table td {
+  border: 1px solid var(--app-line);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  /* prevent long code tokens / badges from blowing out the grid */
+  max-width: 28em;
+}
+
+.md-doc th,
+.md-doc .md-table th {
+  background: var(--app-surface-muted);
+  color: var(--app-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.md-doc tr:nth-child(even),
+.md-doc .md-table tr:nth-child(even) {
+  background: var(--app-surface-soft);
+}
+
+/* badges / code inside cells stay inline and wrap with the cell */
+.md-doc td code,
+.md-doc th code,
+.md-doc td .md-code,
+.md-doc th .md-code {
+  white-space: normal;
+  word-break: break-all;
+}
+
+/* ===== Images ===== */
+.md-doc img,
+.md-doc .md-image {
+  max-width: 100%;
+  margin: 16px 0;
+  border-radius: 10px;
+}
+
+.md-doc .md-image-block {
+  margin: 12px 0;
+  text-align: center;
+}
+
+/* ===== Lists (preview real ul/ol + wysiwyg synthetic) ===== */
+.md-doc ul,
+.md-doc ol {
+  padding-left: 26px;
+  margin: 12px 0;
+  color: var(--app-text-soft);
+}
+
+.md-doc li {
+  margin: 6px 0;
+}
+
+.md-doc li > ul,
+.md-doc li > ol {
+  margin: 4px 0;
+}
+
+/* GFM task list */
+.md-doc li.task-list-item,
+.md-doc .contains-task-list > li {
+  list-style: none;
+  margin-left: -8px;
+}
+
+.md-doc li.task-list-item input[type='checkbox'],
+.md-doc input[type='checkbox'] {
+  accent-color: var(--app-orange-strong);
+  margin-right: 6px;
+}
+
+/* WYSIWYG synthetic lists — match preview bullet color & spacing */
+.md-doc .md-line[data-type='li'] {
+  padding-left: 26px;
+  position: relative;
+  margin: 6px 0;
+  color: var(--app-text-soft);
+}
+
+.md-doc .md-line[data-type='li'][data-list='ul']::before {
+  content: '•';
+  position: absolute;
+  left: 8px;
+  color: var(--app-text-soft);
+}
+
+.md-doc .md-line[data-type='li'][data-list='ol']::before {
+  content: attr(data-num) '.';
+  position: absolute;
+  left: 4px;
+  min-width: 18px;
+  color: var(--app-text-soft);
+  font-weight: 600;
+}
+
+.md-doc .md-task {
+  padding-left: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0;
+  color: var(--app-text-soft);
+}
+
+.md-doc .md-task input[type='checkbox'] {
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.md-doc .md-task-text {
+  flex: 1;
+}
+
+/* ===== HR ===== */
+.md-doc hr,
+.md-doc .md-hr {
+  margin: 32px 0;
+  border: none;
+  height: 2px;
+  background: var(--app-line);
+  border-radius: 1px;
+}
+
+/* ===== Inline emphasis ===== */
+.md-doc strong,
+.md-doc .md-bold {
+  color: var(--app-text);
+  font-weight: 700;
+}
+
+.md-doc em,
+.md-doc .md-italic {
+  color: var(--app-text-soft);
+  font-style: italic;
+}
+
+.md-doc del,
+.md-doc .md-strike {
+  text-decoration: line-through;
+  color: var(--app-text-muted);
+}
+
+.md-doc mark,
+.md-doc .md-highlight {
+  background: var(--app-orange-soft);
+  color: inherit;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.md-doc sup,
+.md-doc .md-superscript {
+  vertical-align: super;
+  font-size: 0.8em;
+}
+
+.md-doc sub,
+.md-doc .md-subscript {
+  vertical-align: sub;
+  font-size: 0.8em;
+}
+
+/* ===== Mermaid ===== */
+.md-doc .mermaid-src,
+.md-doc .mermaid-rendered,
+.md-doc .md-mermaid-block {
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  background: var(--app-surface-soft);
+  overflow: auto;
+}
+
+.md-doc .mermaid-pending,
+.md-doc .md-mermaid-canvas.mermaid-pending {
+  white-space: pre-wrap;
+  color: var(--app-text-muted);
+  font-family: 'Cascadia Mono', 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+}
+
+.md-doc .mermaid-rendered svg,
+.md-doc .md-mermaid-canvas svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.md-doc .md-mermaid-source {
+  display: none;
+}
+
+.md-doc .mermaid-error,
+.md-doc .math-error {
+  color: var(--app-danger);
+  white-space: pre-wrap;
+  margin: 0;
+  font-size: 12px;
+}
+
+/* ===== Math ===== */
+.md-doc .md-math-block {
+  margin: 14px 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.md-doc .md-math-inline {
+  display: inline;
+  padding: 0 2px;
+}
+
+.md-doc .katex-display {
+  margin: 14px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.md-doc .katex {
+  font-size: 1.05em;
+}
+
+/* ===== Raw HTML islands (WYSIWYG) ===== */
+.md-doc .md-raw-html {
+  min-height: auto;
+  margin: 10px 0;
+}
+
+.md-doc .md-raw-html details {
+  border: 1px solid var(--app-line);
+  border-radius: var(--app-radius-sm);
+  padding: 10px 14px;
+  background: var(--app-surface-soft);
+}
+
+.md-doc .md-raw-html summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--app-orange-strong);
+}
+
+.md-doc .md-raw-html kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--app-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--app-surface-muted);
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.9em;
+}
+
+/* ===== Selection ===== */
+.md-doc ::selection {
+  background: rgba(255, 180, 107, 0.36);
+  color: var(--app-text);
+}
+
+/* Dark theme text soft adjustments already via CSS vars */
+.app[data-theme='dark'] .md-doc :not(pre) > code,
+.app[data-theme='dark'] .md-doc .md-code {
+  color: #ff8f70;
+}

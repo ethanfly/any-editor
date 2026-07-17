@@ -855,7 +855,8 @@ const App: React.FC = () => {
       bold: '加粗', italic: '斜体', strike: '删除线', code: '行内代码', highlight: '高亮',
       h1: '标题1', h2: '标题2', h3: '标题3', quote: '引用', ul: '无序列表', ol: '有序列表',
       task: '任务列表', link: '链接', image: '图片', codeblock: '代码块', hr: '分隔线', table: '表格',
-      formatDoc: '文档',
+      flowchart: '流程图', sequence: '时序图', math: '公式块', mathInline: '行内公式',
+      sup: '上标', sub: '下标', formatDoc: '文档',
     };
     setStatusMessage(`已应用格式: ${labels[action] || action}`);
   }, [applyContentEdit]);
@@ -1265,6 +1266,10 @@ const App: React.FC = () => {
     { id: 'table', title: '插入 Markdown 表格', run: handleInsertTable },
     { id: 'format-doc', title: '格式化文档', hint: 'Shift+Alt+F', run: () => { void handleFormatDocument(); } },
     { id: 'minify-json', title: '压缩 JSON', run: handleMinifyJson },
+    { id: 'flowchart', title: '插入流程图', run: () => handleFormat('flowchart') },
+    { id: 'sequence', title: '插入时序图', run: () => handleFormat('sequence') },
+    { id: 'math', title: '插入公式块', run: () => handleFormat('math') },
+    { id: 'math-inline', title: '插入行内公式', run: () => handleFormat('mathInline') },
     { id: 'bold', title: '加粗', hint: 'Ctrl+B', run: () => handleFormat('bold') },
     { id: 'italic', title: '斜体', hint: 'Ctrl+I', run: () => handleFormat('italic') },
     { id: 'code', title: '行内代码', run: () => handleFormat('code') },

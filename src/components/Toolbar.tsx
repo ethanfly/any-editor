@@ -217,6 +217,13 @@ const Toolbar: FC<ToolbarProps> = ({
     { id: 'codeblock', label: '代码块', onClick: format('codeblock'), hidden: !isMarkdown || !onFormat },
     { id: 'hr', label: '分隔线', onClick: format('hr'), hidden: !isMarkdown || !onFormat },
     { id: 'table', label: '表格', onClick: format('table'), hidden: !isMarkdown || !onFormat },
+    { id: 'sep-4', label: '', separator: true, hidden: !isMarkdown || !onFormat },
+    { id: 'flowchart', label: '流程图', onClick: format('flowchart'), hidden: !isMarkdown || !onFormat },
+    { id: 'sequence', label: '时序图', onClick: format('sequence'), hidden: !isMarkdown || !onFormat },
+    { id: 'math', label: '公式块', onClick: format('math'), hidden: !isMarkdown || !onFormat },
+    { id: 'mathInline', label: '行内公式', onClick: format('mathInline'), hidden: !isMarkdown || !onFormat },
+    { id: 'sup', label: '上标', onClick: format('sup'), hidden: !isMarkdown || !onFormat },
+    { id: 'sub', label: '下标', onClick: format('sub'), hidden: !isMarkdown || !onFormat },
   ];
 
   const editItems: MenuItem[] = [
