@@ -24,7 +24,7 @@ import SearchPanel from './components/SearchPanel';
 import type { OpenTab, ViewMode } from './types';
 import { BINARY_EXTENSIONS, IMAGE_EXTENSIONS, MARKDOWN_EXTENSIONS } from './types';
 import { loadSettings, saveSettings, type AppSettings } from './types/settings';
-import { markdownToHtmlDocument } from './utils/exportMarkdown';
+import { contentToHtmlDocument, printHtmlDocument } from './utils/exportMarkdown';
 import { applyMarkdownFormat, type FormatAction } from './utils/markdownFormat';
 import { formatJsonDocument, minifyJsonDocument } from './utils/jsonFormat';
 import { computeTextStats } from './utils/textStats';
@@ -957,7 +957,10 @@ const App: React.FC = () => {
       return;
     }
     try {
-      const html = markdownToHtmlDocument(tab.name || 'document', tab.content);
+      const html = await contentToHtmlDocument(tab.name || 'document', tab.content, {
+        extension: tab.extension,
+        filePath: tab.isUntitled ? undefined : tab.path,
+      });
       const selected = await save({
         title: '导出 HTML',
         defaultPath: tab.name.replace(/\.[^.]+$/, '') + '.html',
@@ -978,20 +981,13 @@ const App: React.FC = () => {
       return;
     }
     try {
-      const html = markdownToHtmlDocument(tab.name || 'document', tab.content);
-      const w = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
-      if (!w) {
-        setStatusMessage('无法打开打印窗口，请检查弹窗拦截');
-        return;
-      }
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
-      // Give styles a tick to apply
-      setTimeout(() => {
-        w.focus();
-        w.print();
-      }, 250);
+      setStatusMessage('正在准备打印…');
+      const html = await contentToHtmlDocument(tab.name || 'document', tab.content, {
+        extension: tab.extension,
+        filePath: tab.isUntitled ? undefined : tab.path,
+      });
+      // Hidden iframe print — works in Tauri/WebView2 (window.open is often blocked / returns null with noopener)
+      await printHtmlDocument(html);
       setStatusMessage('已打开打印对话框（可另存为 PDF）');
     } catch (err) {
       setStatusMessage(`导出 PDF 失败: ${String(err)}`);
