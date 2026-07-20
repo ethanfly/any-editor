@@ -1486,63 +1486,25 @@ const App: React.FC = () => {
                 );
                 if (affected.length === 0) return true;
 
-                if (affected.length === 1) {
-                  const decision = await confirmDiscard(affected[0]);
-                  if (decision === 'cancel') {
-                    setStatusMessage('已取消删除（存在未保存更改）');
-                    return false;
-                  }
-                  if (decision === 'save') {
-                    const ok = await handleSave(affected[0]);
-                    if (!ok) {
-                      setStatusMessage('保存失败，已取消删除');
-                      return false;
-                    }
-                  }
-                  return true;
-                }
-
-                let multi: 'save' | 'discard' | 'cancel' = 'cancel';
+                // Delete permanently removes the path — never offer "save then delete"
+                // (that would write content only to immediately destroy it).
+                const names = affected.map((t) => t.name).slice(0, 5).join('、');
+                const more = affected.length > 5 ? ` 等 ${affected.length} 个` : '';
+                let discard = false;
                 try {
-                  const result = await message(
-                    `删除路径下有 ${affected.length} 个未保存文件。\n删除前如何处理？`,
+                  discard = await ask(
+                    `「${names}${more}」有未保存的更改。\n删除后这些更改将永久丢失，且无法从回收站恢复（取决于系统删除实现）。\n\n是否放弃未保存更改并删除？`,
                     {
-                      title: '未保存的更改',
+                      title: '确认删除',
                       kind: 'warning',
-                      buttons: {
-                        yes: '全部保存后删除',
-                        no: '不保存并删除',
-                        cancel: '取消',
-                      },
                     }
                   );
-                  if (result === 'Yes' || result === '全部保存后删除' || result === 'yes') multi = 'save';
-                  else if (result === 'No' || result === '不保存并删除' || result === 'no') multi = 'discard';
-                  else multi = 'cancel';
                 } catch {
-                  try {
-                    const saveAll = await ask(
-                      `删除路径下有 ${affected.length} 个未保存文件。\n选“是”全部保存后删除，选“否”取消删除。`,
-                      { title: '未保存的更改', kind: 'warning' }
-                    );
-                    multi = saveAll ? 'save' : 'cancel';
-                  } catch {
-                    multi = 'cancel';
-                  }
+                  discard = false;
                 }
-                if (multi === 'cancel') {
+                if (!discard) {
                   setStatusMessage('已取消删除（存在未保存更改）');
                   return false;
-                }
-                if (multi === 'save') {
-                  for (const tab of affected) {
-                    const latest = tabsRef.current.find((t) => pathsEqual(t.path, tab.path)) ?? tab;
-                    const ok = await handleSave(latest);
-                    if (!ok) {
-                      setStatusMessage('保存失败，已取消删除');
-                      return false;
-                    }
-                  }
                 }
                 return true;
               }}
