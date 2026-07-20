@@ -168,10 +168,75 @@ fn write_bytes(path: &Path, bytes: &[u8]) -> Result<(), String> {
             fs::create_dir_all(parent).map_err(|e| format!("Failed to create parent dir: {}", e))?;
         }
     }
-    let mut file = fs::File::create(path).map_err(|e| format!("Failed to create file: {}", e))?;
-    file.write_all(bytes)
-        .map_err(|e| format!("Failed to write file: {}", e))?;
-    Ok(())
+
+    // Atomic-ish save: write a sibling temp file fully, then replace the target.
+    // Avoids empty/half-written files if the process crashes mid-write.
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    let file_name = path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("file");
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let tmp_name = format!(".{file_name}.{ts}.anyedit.tmp");
+    let tmp_path = parent.join(tmp_name);
+
+    let write_tmp = (|| -> Result<(), String> {
+        let mut file =
+            fs::File::create(&tmp_path).map_err(|e| format!("Failed to create temp file: {}", e))?;
+        file.write_all(bytes)
+            .map_err(|e| format!("Failed to write temp file: {}", e))?;
+        file.sync_all()
+            .map_err(|e| format!("Failed to sync temp file: {}", e))?;
+        Ok(())
+    })();
+
+    if let Err(err) = write_tmp {
+        let _ = fs::remove_file(&tmp_path);
+        return Err(err);
+    }
+
+    // Fast path: destination missing (or platform allows replace-via-rename).
+    if !path.exists() {
+        return fs::rename(&tmp_path, path).map_err(|e| {
+            let _ = fs::remove_file(&tmp_path);
+            format!("Failed to move temp file into place: {}", e)
+        });
+    }
+
+    // Existing file: never truncate in place.
+    // Move original aside, promote temp, then drop backup. On failure, restore original.
+    let bak_path = parent.join(format!(".{file_name}.{ts}.anyedit.bak"));
+    if bak_path.exists() {
+        let _ = fs::remove_file(&bak_path);
+    }
+
+    if let Err(e) = fs::rename(path, &bak_path) {
+        let _ = fs::remove_file(&tmp_path);
+        return Err(format!("Failed to park original file before replace: {}", e));
+    }
+
+    match fs::rename(&tmp_path, path) {
+        Ok(()) => {
+            let _ = fs::remove_file(&bak_path);
+            Ok(())
+        }
+        Err(e) => {
+            let _ = fs::remove_file(&tmp_path);
+            // Roll back original content. Only drop backup after successful restore.
+            match fs::rename(&bak_path, path) {
+                Ok(()) => Err(format!("Failed to replace file (original preserved): {}", e)),
+                Err(restore_err) => Err(format!(
+                    "Failed to replace file, and restore also failed. Original content kept at: {}. replace_error={}, restore_error={}",
+                    bak_path.display(),
+                    e,
+                    restore_err
+                )),
+            }
+        }
+    }
 }
 
 #[tauri::command]

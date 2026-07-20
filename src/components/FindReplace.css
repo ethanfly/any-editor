@@ -1,15 +1,16 @@
 .find-replace {
   position: absolute;
   top: 10px;
-  right: 16px;
+  right: 14px;
   z-index: 20;
-  width: min(420px, calc(100% - 24px));
+  width: min(400px, calc(100% - 24px));
   padding: 10px;
   border: 1px solid var(--app-line);
   border-radius: 12px;
   background: var(--app-chrome);
-  box-shadow: var(--app-shadow);
-  backdrop-filter: blur(8px);
+  box-shadow: var(--app-shadow-menu, var(--app-shadow));
+  backdrop-filter: blur(10px);
+  animation: app-panel-in 140ms var(--app-ease) both;
 }
 
 .find-replace-row {
@@ -26,54 +27,69 @@
 .find-input {
   flex: 1;
   min-width: 0;
-  height: 32px;
+  height: var(--app-control-height, 30px);
   padding: 0 10px;
   border: 1px solid var(--app-line);
-  border-radius: 8px;
-  background: var(--app-surface-soft);
+  border-radius: var(--app-radius-xs, 8px);
+  background: var(--app-surface);
   color: var(--app-text);
   outline: none;
+  transition:
+    border-color var(--app-duration) var(--app-ease),
+    box-shadow var(--app-duration) var(--app-ease);
 }
 
 .find-input:focus {
-  border-color: var(--app-orange);
-  box-shadow: 0 0 0 3px rgba(241, 149, 63, 0.15);
+  border-color: var(--app-orange-strong);
+  box-shadow: var(--app-focus-ring);
 }
 
 .find-btn {
-  height: 32px;
-  min-width: 32px;
+  height: var(--app-control-height, 30px);
+  min-width: var(--app-control-height, 30px);
   padding: 0 10px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--app-radius-xs, 8px);
   background: var(--app-surface-muted);
   color: var(--app-text-soft);
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 660;
+  font-size: 0.88rem;
+  transition:
+    background var(--app-duration) var(--app-ease),
+    border-color var(--app-duration) var(--app-ease),
+    color var(--app-duration) var(--app-ease);
 }
 
 .find-btn:hover {
-  background: var(--app-chrome-strong);
+  background: var(--app-hover);
   border-color: var(--app-line);
   color: var(--app-text);
 }
 
 .find-btn.text {
   min-width: auto;
-  font-size: 0.9231rem;
+  font-size: 0.85rem;
 }
 
 .find-btn.ghost {
   background: transparent;
-  font-size: 1.3846rem;
+  font-size: 1.2rem;
   line-height: 1;
+  color: var(--app-text-muted);
+}
+
+.find-btn.ghost:hover {
+  background: var(--app-hover);
+  border-color: transparent;
+  color: var(--app-text);
 }
 
 .find-replace-row.options {
   justify-content: flex-start;
   gap: 12px;
   color: var(--app-text-muted);
-  font-size: 0.9231rem;
+  font-size: 0.85rem;
 }
 
 .find-replace-row.options label {
@@ -87,5 +103,7 @@
 .find-status {
   margin-left: auto;
   color: var(--app-green-strong);
-  font-weight: 600;
+  font-weight: 640;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
 }

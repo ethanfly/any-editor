@@ -14,32 +14,32 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 16px;
+  gap: 14px;
   color: var(--app-text-muted);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.92rem;
+  font-weight: 660;
 }
 
 .pdf-error {
-  color: #cf5f5f;
+  color: var(--app-danger);
 }
 
 .pdf-error-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
-  background: rgba(230, 129, 129, 0.14);
-  color: #cf5f5f;
+  background: var(--app-danger-hover-bg);
+  color: var(--app-danger);
   font-weight: 800;
 }
 
 .pdf-spinner {
-  width: 34px;
-  height: 34px;
-  border: 3px solid rgba(255, 180, 107, 0.24);
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 180, 107, 0.22);
   border-top-color: var(--app-orange-strong);
   border-radius: 999px;
   animation: pdf-spin 0.8s linear infinite;
@@ -54,8 +54,8 @@
 .pdf-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
+  gap: 5px;
+  padding: 8px 12px;
   flex-shrink: 0;
   background: var(--app-chrome-strong);
   border-bottom: 1px solid var(--app-line);
@@ -63,34 +63,26 @@
 }
 
 .pdf-toolbar-btn {
-  min-width: 34px;
-  padding: 7px 11px;
+  min-width: 30px;
+  height: var(--app-control-height, 30px);
+  padding: 0 10px;
   background: var(--app-surface-muted);
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--app-radius-xs, 8px);
   color: var(--app-text-soft);
   cursor: pointer;
-  font-size: 0.9231rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 660;
   transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border-color 140ms ease,
-    color 140ms ease,
-    box-shadow 140ms ease;
+    background var(--app-duration) var(--app-ease),
+    border-color var(--app-duration) var(--app-ease),
+    color var(--app-duration) var(--app-ease);
 }
 
 .pdf-toolbar-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: var(--app-chrome-strong);
+  background: var(--app-hover);
   border-color: var(--app-line);
   color: var(--app-text);
-  box-shadow: var(--app-shadow-sm);
-}
-
-.pdf-toolbar-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: none;
 }
 
 .pdf-toolbar-btn:disabled {
@@ -101,39 +93,43 @@
 .pdf-toolbar-btn.active {
   background: var(--app-orange-soft);
   color: var(--app-orange-strong);
-  border-color: rgba(241, 149, 63, 0.35);
+  border-color: transparent;
 }
 
 .pdf-page-jump {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 4px;
-  background: var(--app-green-soft);
+  gap: 3px;
+  height: var(--app-control-height, 30px);
+  padding: 0 8px 0 4px;
+  background: var(--app-surface-muted);
   border-radius: 999px;
+  border: 1px solid var(--app-line);
 }
 
 .pdf-page-input {
-  width: 44px;
+  width: 40px;
   border: none;
   outline: none;
   background: transparent;
-  color: var(--app-green-strong);
-  font-size: 0.9231rem;
-  font-weight: 700;
+  color: var(--app-text);
+  font-size: 0.85rem;
+  font-weight: 680;
   text-align: center;
-  padding: 5px 2px;
+  padding: 4px 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .pdf-page-total {
-  color: var(--app-green-strong);
-  font-size: 0.9231rem;
-  font-weight: 700;
-  min-width: 2.5em;
+  color: var(--app-text-muted);
+  font-size: 0.85rem;
+  font-weight: 640;
+  min-width: 2.4em;
+  font-variant-numeric: tabular-nums;
 }
 
 .pdf-scale-info {
-  min-width: 56px;
+  min-width: 52px;
   background: var(--app-orange-soft);
   color: var(--app-orange-strong);
 }
@@ -144,8 +140,8 @@
 }
 
 .pdf-rendering-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--app-orange-strong);
   animation: pdf-spin 0.9s linear infinite;
@@ -163,7 +159,7 @@
   display: block;
   position: relative;
   background:
-    radial-gradient(circle at 20% 0%, rgba(255, 180, 107, 0.06), transparent 40%),
+    radial-gradient(circle at 20% 0%, rgba(255, 180, 107, 0.05), transparent 40%),
     var(--app-surface-soft);
 }
 
@@ -173,7 +169,6 @@
 }
 
 .pdf-page-sheet {
-  /* Center page when smaller than viewport; allow growth when zoomed */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -187,9 +182,8 @@
 .pdf-canvas {
   display: block;
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: var(--app-shadow);
-  /* Critical: honor intrinsic style width/height from JS (zoom) */
   max-width: none;
   height: auto;
   image-rendering: auto;
@@ -198,10 +192,10 @@
 
 .pdf-hint {
   flex-shrink: 0;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-top: 1px solid var(--app-line);
   background: var(--app-chrome-strong);
   color: var(--app-text-muted);
-  font-size: 12px;
+  font-size: 0.78rem;
   text-align: center;
 }

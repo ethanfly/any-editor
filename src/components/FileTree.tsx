@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { FileEntry } from '../types';
+import { pathsEqual } from '../utils/pathUtils';
 import './FileTree.css';
 
 interface FileTreeProps {
@@ -9,6 +10,11 @@ interface FileTreeProps {
   onRootChange: () => void;
   refreshKey: number;
   onTreeMutated?: () => void;
+  activeFilePath?: string | null;
+  onPathRenamed?: (from: string, to: string) => void;
+  onPathDeleted?: (path: string) => void;
+  /** Return false to abort delete before disk removal (e.g. dirty tabs). */
+  onBeforePathDelete?: (path: string) => boolean | Promise<boolean>;
 }
 
 interface FileVisualMeta {
@@ -86,7 +92,8 @@ const FileTreeNode: React.FC<{
   depth: number;
   onFileOpen: (path: string, name?: string) => void;
   onContext: (e: React.MouseEvent, entry: FileEntry) => void;
-}> = ({ entry, depth, onFileOpen, onContext }) => {
+  activeFilePath?: string | null;
+}> = ({ entry, depth, onFileOpen, onContext, activeFilePath }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // null = not loaded yet; [] = loaded and truly empty
   const [children, setChildren] = useState<FileEntry[] | null>(
@@ -125,11 +132,13 @@ const FileTreeNode: React.FC<{
   };
 
   const visualMeta = getFileVisualMeta(entry, isExpanded);
+  const selected =
+    !entry.is_dir && !!activeFilePath && pathsEqual(entry.path, activeFilePath);
 
   return (
     <div className="file-tree-node" role="treeitem" aria-expanded={entry.is_dir ? isExpanded : undefined}>
       <div
-        className={`file-tree-item ${!entry.is_dir ? 'file-item' : ''}`}
+        className={`file-tree-item${!entry.is_dir ? ' file-item' : ''}${selected ? ' selected' : ''}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
         onContextMenu={(e) => onContext(e, entry)}
@@ -161,6 +170,7 @@ const FileTreeNode: React.FC<{
               depth={depth + 1}
               onFileOpen={onFileOpen}
               onContext={onContext}
+              activeFilePath={activeFilePath}
             />
           ))}
           {loaded && !loadingChildren && children && children.length === 0 && (
@@ -180,6 +190,10 @@ const FileTree: React.FC<FileTreeProps> = ({
   onRootChange,
   refreshKey,
   onTreeMutated,
+  activeFilePath,
+  onPathRenamed,
+  onPathDeleted,
+  onBeforePathDelete,
 }) => {
   const [tree, setTree] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -225,6 +239,7 @@ const FileTree: React.FC<FileTreeProps> = ({
       cancelled = true;
     };
   }, [rootPath, refreshKey]);
+
   useEffect(() => {
     if (!menu && !opsOpen) return;
     const close = (e: MouseEvent) => {
@@ -246,6 +261,7 @@ const FileTree: React.FC<FileTreeProps> = ({
       window.removeEventListener('keydown', onKey);
     };
   }, [menu, opsOpen]);
+
   const mutateDone = async () => {
     await loadTree();
     onTreeMutated?.();
@@ -274,6 +290,7 @@ const FileTree: React.FC<FileTreeProps> = ({
     const target = joinPath(parent, name);
     try {
       await invoke('rename_path', { from: entry.path, to: target });
+      onPathRenamed?.(entry.path, target);
       setStatus(`已重命名: ${name}`);
       await mutateDone();
     } catch (err) {
@@ -285,7 +302,16 @@ const FileTree: React.FC<FileTreeProps> = ({
     const ok = window.confirm(`确定删除「${entry.name}」？此操作不可撤销。`);
     if (!ok) return;
     try {
+      if (onBeforePathDelete) {
+        const allowed = await onBeforePathDelete(entry.path);
+        if (!allowed) {
+          setStatus('已取消删除');
+          setMenu(null);
+          return;
+        }
+      }
       await invoke('delete_path', { path: entry.path });
+      onPathDeleted?.(entry.path);
       setStatus(`已删除: ${entry.name}`);
       await mutateDone();
     } catch (err) {
@@ -381,6 +407,7 @@ const FileTree: React.FC<FileTreeProps> = ({
               entry={entry}
               depth={0}
               onFileOpen={onFileOpen}
+              activeFilePath={activeFilePath}
               onContext={(e, ent) => {
                 e.preventDefault();
                 e.stopPropagation();

@@ -30,6 +30,7 @@ import { formatJsonDocument, minifyJsonDocument } from './utils/jsonFormat';
 import { computeTextStats } from './utils/textStats';
 import { loadWindowGeometry, saveWindowGeometry } from './utils/windowState';
 import { loadWorkspace, saveWorkspace, pushRecentFile } from './utils/workspace';
+import { isAppExecutableArg, isPathUnder, normalizePath, pathsEqual, remapPath } from './utils/pathUtils';
 import DiffPanel from './components/DiffPanel';
 import CsvTableView from './components/CsvTableView';
 import ShortcutsHelp from './components/ShortcutsHelp';
@@ -126,6 +127,7 @@ const App: React.FC = () => {
   const editorPaneRef = useRef<EditorPaneHandle | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diskMtimeRef = useRef<Record<string, number>>({});
+  const diskChangedPathsRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     outlineVisibleRef.current = outlineVisible;
@@ -133,6 +135,10 @@ const App: React.FC = () => {
     activeTabPathRef.current = activeTabPath;
     settingsRef.current = settings;
   }, [outlineVisible, tabs, activeTabPath, settings]);
+
+  useEffect(() => {
+    diskChangedPathsRef.current = diskChangedPaths;
+  }, [diskChangedPaths]);
 
   useEffect(() => {
     saveSettings(settings);
@@ -253,7 +259,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const activeTab = tabs.find((t) => t.path === activeTabPath) || null;
+  const activeTab = tabs.find((t) => activeTabPath != null && pathsEqual(t.path, activeTabPath)) || null;
   const isMarkdown = activeTab ? MARKDOWN_EXTENSIONS.has(activeTab.extension) : false;
   const isPDF = activeTab?.extension === 'pdf';
   const isImage = !!activeTab && IMAGE_EXTENSIONS.has(activeTab.extension);
@@ -294,30 +300,34 @@ const App: React.FC = () => {
 
   const openFile = useCallback(async (filePath: string) => {
     try {
-      const isDir = await invoke<boolean>('is_directory', { path: filePath }).catch(() => false);
+      const rawPath = filePath;
+      const isDir = await invoke<boolean>('is_directory', { path: rawPath }).catch(() => false);
       if (isDir) {
-        setRootPath(filePath);
+        setRootPath(normalizePath(rawPath));
         setFileTreeVisible(true);
         setRefreshKey((k) => k + 1);
-        setStatusMessage(`已打开文件夹: ${filePath}`);
+        setStatusMessage(`已打开文件夹: ${rawPath}`);
         return;
       }
 
-      if (tabsRef.current.some((t) => t.path === filePath)) {
-        setActiveTabPath(filePath);
+      const existing = tabsRef.current.find((t) => pathsEqual(t.path, rawPath));
+      if (existing) {
+        setActiveTabPath(existing.path);
         return;
       }
 
-      const name = getFileName(filePath);
-      const ext = getExtension(filePath);
+      // Prefer backend path after read; normalize for tab identity.
+      let resolvedPath = normalizePath(rawPath);
+      const name = getFileName(resolvedPath);
+      const ext = getExtension(resolvedPath);
 
       // Large file protection for text-like opens
       let forceReadonly = false;
       if (!(ext === 'pdf' || BINARY_EXTENSIONS.has(ext))) {
         try {
-          const meta = await invoke<{ size: number; modified_ms?: number }>('file_meta', { path: filePath });
+          const meta = await invoke<{ size: number; modified_ms?: number }>('file_meta', { path: rawPath });
           if (typeof meta.modified_ms === 'number') {
-            diskMtimeRef.current[filePath] = meta.modified_ms;
+            diskMtimeRef.current[resolvedPath] = meta.modified_ms;
           }
           if (meta.size >= LARGE_FILE_BLOCK_BYTES) {
             const proceed = await ask(
@@ -345,7 +355,7 @@ const App: React.FC = () => {
       if (ext === 'pdf'
  || BINARY_EXTENSIONS.has(ext)) {
         const newTab: OpenTab = {
-          path: filePath,
+          path: resolvedPath,
           name,
           extension: ext || 'bin',
           content: '',
@@ -353,8 +363,8 @@ const App: React.FC = () => {
           isBinary: true,
           encoding: ext === 'pdf' ? 'PDF' : IMAGE_EXTENSIONS.has(ext) ? 'Image' : 'Binary',
         };
-        setTabs((prev) => (prev.some((t) => t.path === filePath) ? prev : [...prev, newTab]));
-        setActiveTabPath(filePath);
+        setTabs((prev) => (prev.some((t) => pathsEqual(t.path, resolvedPath)) ? prev : [...prev, newTab]));
+        setActiveTabPath(resolvedPath);
         setStatusMessage(
           ext === 'pdf' || IMAGE_EXTENSIONS.has(ext)
             ? `已打开: ${name}`
@@ -363,7 +373,7 @@ const App: React.FC = () => {
         return;
       }
 
-      const result = await invoke<FileReadResult>('read_file', { path: filePath }).catch((err: unknown) => {
+      const result = await invoke<FileReadResult>('read_file', { path: rawPath }).catch((err: unknown) => {
         const msg = String(err);
         if (msg.includes('BINARY_FILE')) return 'BINARY' as const;
         throw err;
@@ -371,7 +381,7 @@ const App: React.FC = () => {
 
       if (result === 'BINARY') {
         const newTab: OpenTab = {
-          path: filePath,
+          path: resolvedPath,
           name,
           extension: ext || 'bin',
           content: '',
@@ -379,15 +389,23 @@ const App: React.FC = () => {
           isBinary: true,
           encoding: 'Binary',
         };
-        setTabs((prev) => (prev.some((t) => t.path === filePath) ? prev : [...prev, newTab]));
-        setActiveTabPath(filePath);
+        setTabs((prev) => (prev.some((t) => pathsEqual(t.path, resolvedPath)) ? prev : [...prev, newTab]));
+        setActiveTabPath(resolvedPath);
         setStatusMessage(`已打开二进制文件: ${name}`);
         return;
       }
 
+      if (result.path) {
+        resolvedPath = normalizePath(result.path);
+        if (typeof diskMtimeRef.current[normalizePath(rawPath)] === 'number' && resolvedPath !== normalizePath(rawPath)) {
+          diskMtimeRef.current[resolvedPath] = diskMtimeRef.current[normalizePath(rawPath)];
+          delete diskMtimeRef.current[normalizePath(rawPath)];
+        }
+      }
+
       const newTab: OpenTab = {
-        path: filePath,
-        name,
+        path: resolvedPath,
+        name: getFileName(resolvedPath),
         extension: result.extension || ext,
         content: result.content,
         isModified: false,
@@ -396,16 +414,16 @@ const App: React.FC = () => {
         isReadonly: forceReadonly,
       };
 
-      setTabs((prev) => (prev.some((t) => t.path === filePath) ? prev : [...prev, newTab]));
-      setActiveTabPath(filePath);
+      setTabs((prev) => (prev.some((t) => pathsEqual(t.path, resolvedPath)) ? prev : [...prev, newTab]));
+      setActiveTabPath(resolvedPath);
       if (MARKDOWN_EXTENSIONS.has(result.extension || ext)) {
         setViewMode(settingsRef.current.defaultMarkdownView);
       } else {
         setViewMode('code');
       }
       setCurrentLine(1);
-      setStatusMessage(`已打开: ${name}`);
-      setRecentFiles(pushRecentFile(filePath));
+      setStatusMessage(`已打开: ${newTab.name}`);
+      setRecentFiles(pushRecentFile(resolvedPath));
     } catch (err: unknown) {
       setStatusMessage(`错误: ${String(err)}`);
     }
@@ -439,7 +457,7 @@ const App: React.FC = () => {
       name: `未命名-${id}.md`,
       extension: 'md',
       content: '',
-      isModified: true,
+      isModified: false,
       isBinary: false,
       encoding: 'UTF-8',
       isUntitled: true,
@@ -453,46 +471,64 @@ const App: React.FC = () => {
   const writeTabToDisk = useCallback(
     async (tab: OpenTab, targetPath: string): Promise<boolean> => {
       try {
+        const writtenContent = tab.content;
+        const dest = normalizePath(targetPath);
+        const hasConflict = Object.keys(diskChangedPathsRef.current).some((k) => pathsEqual(k, dest) || pathsEqual(k, tab.path));
+        if (hasConflict && !tab.isUntitled && pathsEqual(dest, tab.path)) {
+          const overwrite = await ask(
+            `「${tab.name}」的磁盘版本已变化。\n直接保存将覆盖磁盘内容。\n是否仍要覆盖保存？\n（可先取消并打开“比较”）`,
+            { title: '磁盘冲突', kind: 'warning' }
+          );
+          if (!overwrite) {
+            setStatusMessage('已取消保存（存在磁盘冲突）');
+            return false;
+          }
+        }
         await invoke('write_file', {
-          path: targetPath,
-          content: tab.content,
+          path: dest,
+          content: writtenContent,
           encoding: tab.encoding?.startsWith('GBK') ? 'GBK' : 'UTF-8',
         });
-        const name = getFileName(targetPath);
-        const ext = getExtension(targetPath);
+        const name = getFileName(dest);
+        const ext = getExtension(dest);
         setTabs((prev) =>
           prev.map((t) =>
-            t.path === tab.path
+            pathsEqual(t.path, tab.path)
               ? {
                   ...t,
-                  path: targetPath,
+                  path: dest,
                   name,
                   extension: ext || t.extension,
-                  isModified: false,
+                  // Keep dirty if user typed more while await was in flight.
+                  isModified: t.content !== writtenContent,
                   isUntitled: false,
                 }
               : t
           )
         );
-        if (activeTabPathRef.current === tab.path) {
-          setActiveTabPath(targetPath);
+        if (activeTabPathRef.current && pathsEqual(activeTabPathRef.current, tab.path)) {
+          setActiveTabPath(dest);
         }
         setStatusMessage(`已保存: ${name}`);
         try {
-          const meta = await invoke<{ modified_ms: number }>('file_meta', { path: targetPath });
+          const meta = await invoke<{ modified_ms: number }>('file_meta', { path: dest });
           if (typeof meta.modified_ms === 'number') {
-            diskMtimeRef.current[targetPath] = meta.modified_ms;
+            diskMtimeRef.current[dest] = meta.modified_ms;
+            if (!pathsEqual(tab.path, dest)) {
+              delete diskMtimeRef.current[tab.path];
+            }
           }
         } catch {
           // ignore
         }
         setDiskChangedPaths((m) => {
           const next = { ...m };
-          delete next[targetPath];
-          delete next[tab.path];
+          for (const key of Object.keys(next)) {
+            if (pathsEqual(key, dest) || pathsEqual(key, tab.path)) delete next[key];
+          }
           return next;
         });
-        await persistHistory({ ...tab, path: targetPath, isUntitled: false });
+        await persistHistory({ ...tab, path: dest, content: writtenContent, isUntitled: false });
         setRefreshKey((k) => k + 1);
         return true;
       } catch (err: unknown) {
@@ -505,7 +541,11 @@ const App: React.FC = () => {
 
   const handleSaveAs = useCallback(async (tabOverride?: OpenTab | null): Promise<boolean> => {
     const tab =
-      tabOverride ?? tabsRef.current.find((t) => t.path === activeTabPathRef.current) ?? null;
+      tabOverride ??
+      tabsRef.current.find(
+        (t) => activeTabPathRef.current != null && pathsEqual(t.path, activeTabPathRef.current)
+      ) ??
+      null;
     if (!tab || tab.isBinary) return false;
 
     try {
@@ -529,7 +569,11 @@ const App: React.FC = () => {
   const handleSave = useCallback(
     async (tabOverride?: OpenTab | null): Promise<boolean> => {
       const tab =
-        tabOverride ?? tabsRef.current.find((t) => t.path === activeTabPathRef.current) ?? null;
+        tabOverride ??
+        tabsRef.current.find(
+          (t) => activeTabPathRef.current != null && pathsEqual(t.path, activeTabPathRef.current)
+        ) ??
+        null;
       if (!tab || tab.isBinary) return false;
       if (tab.isUntitled || tab.path.startsWith('untitled:')) {
         return handleSaveAs(tab);
@@ -549,15 +593,19 @@ const App: React.FC = () => {
         for (const tab of openTabs) {
           try {
             const meta = await invoke<{ modified_ms: number }>('file_meta', { path: tab.path });
-            const prev = diskMtimeRef.current[tab.path];
+            const key = normalizePath(tab.path);
+            const prev = diskMtimeRef.current[key] ?? diskMtimeRef.current[tab.path];
             if (typeof meta.modified_ms === 'number') {
-              if (prev && meta.modified_ms > prev && !tab.isModified) {
-                setDiskChangedPaths((m) => ({ ...m, [tab.path]: true }));
-                setStatusMessage(`磁盘文件已变化: ${tab.name}（可点“比较”或重新打开）`);
-              }
-              // if we saved recently and not modified, refresh baseline mtime
-              if (!tab.isModified) {
-                diskMtimeRef.current[tab.path] = meta.modified_ms;
+              if (prev == null) {
+                diskMtimeRef.current[key] = meta.modified_ms;
+              } else if (meta.modified_ms > prev) {
+                setDiskChangedPaths((m) => ({ ...m, [key]: true }));
+                setStatusMessage(
+                  tab.isModified
+                    ? `磁盘文件已变化且本地有未保存修改: ${tab.name}（请点“比较”，自动保存已暂停）`
+                    : `磁盘文件已变化: ${tab.name}（可点“比较”或重新打开）`
+                );
+                // Keep baseline at last-known-good disk mtime until user reloads or overwrites.
               }
             }
           } catch {
@@ -580,18 +628,48 @@ const App: React.FC = () => {
       void (async () => {
         for (const tab of dirty) {
           // re-read latest from ref
-          const latest = tabsRef.current.find((t) => t.path === tab.path);
+          const latest = tabsRef.current.find((t) => pathsEqual(t.path, tab.path));
           if (!latest || !latest.isModified || latest.isBinary || latest.isUntitled) continue;
+          if (latest.isReadonly) continue;
+          const conflicted = Object.keys(diskChangedPathsRef.current).some((k) =>
+            pathsEqual(k, latest.path)
+          );
+          if (conflicted) {
+            setStatusMessage(`已暂停自动保存（磁盘冲突）: ${latest.name}`);
+            continue;
+          }
           try {
+            const writtenContent = latest.content;
+            const dest = normalizePath(latest.path);
             await invoke('write_file', {
-              path: latest.path,
-              content: latest.content,
+              path: dest,
+              content: writtenContent,
               encoding: latest.encoding?.startsWith('GBK') ? 'GBK' : 'UTF-8',
             });
             setTabs((prev) =>
-              prev.map((t) => (t.path === latest.path ? { ...t, isModified: false } : t))
+              prev.map((t) =>
+                pathsEqual(t.path, dest)
+                  ? { ...t, path: dest, isModified: t.content !== writtenContent }
+                  : t
+              )
             );
-            await persistHistory(latest);
+            try {
+              const meta = await invoke<{ modified_ms: number }>('file_meta', { path: dest });
+              if (typeof meta.modified_ms === 'number') {
+                diskMtimeRef.current[dest] = meta.modified_ms;
+              }
+            } catch {
+              // ignore meta
+            }
+            setDiskChangedPaths((m) => {
+              if (!Object.keys(m).some((k) => pathsEqual(k, dest))) return m;
+              const next = { ...m };
+              for (const key of Object.keys(next)) {
+                if (pathsEqual(key, dest)) delete next[key];
+              }
+              return next;
+            });
+            await persistHistory({ ...latest, path: dest, content: writtenContent });
             setStatusMessage(`自动保存: ${latest.name}`);
           } catch (err) {
             setStatusMessage(`自动保存失败: ${String(err)}`);
@@ -620,17 +698,25 @@ const App: React.FC = () => {
       if (result === 'No' || result === '不保存' || result === 'no') return 'discard';
       return 'cancel';
     } catch {
-      const saveIt = await ask(`「${tab.name}」有未保存的更改，是否保存？`, {
-        title: '未保存的更改',
-        kind: 'warning',
-      });
-      return saveIt ? 'save' : 'discard';
+      // Fallback path only has Yes/No — treat No as cancel to avoid silent discard.
+      try {
+        const saveIt = await ask(
+          `「${tab.name}」有未保存的更改。\n选“是”保存，选“否”取消关闭（不会丢弃更改）。`,
+          {
+            title: '未保存的更改',
+            kind: 'warning',
+          }
+        );
+        return saveIt ? 'save' : 'cancel';
+      } catch {
+        return 'cancel';
+      }
     }
   }, []);
 
   const handleTabClose = useCallback(
     async (path: string) => {
-      const tab = tabsRef.current.find((t) => t.path === path);
+      const tab = tabsRef.current.find((t) => pathsEqual(t.path, path));
       if (!tab) return;
 
       if (tab.isModified && !tab.isBinary) {
@@ -643,10 +729,10 @@ const App: React.FC = () => {
       }
 
       setTabs((prev) => {
-        const idx = prev.findIndex((t) => t.path === path);
-        const newTabs = prev.filter((t) => t.path !== path);
+        const idx = prev.findIndex((t) => pathsEqual(t.path, path));
+        const newTabs = prev.filter((t) => !pathsEqual(t.path, path));
 
-        if (path === activeTabPathRef.current) {
+        if (activeTabPathRef.current && pathsEqual(path, activeTabPathRef.current)) {
           if (newTabs.length > 0) {
             const newIdx = Math.min(Math.max(idx, 0), newTabs.length - 1);
             setActiveTabPath(newTabs[newIdx].path);
@@ -682,31 +768,31 @@ const App: React.FC = () => {
     const handleContentChange = useCallback((content: string) => {
     const path = activeTabPathRef.current;
     if (!path) return;
-    const current = tabsRef.current.find((t) => t.path === path);
+    const current = tabsRef.current.find((t) => pathsEqual(t.path, path));
     if (current?.isReadonly) {
       setStatusMessage('只读文件，无法编辑（大文件保护）');
       return;
     }
     setTabs((prev) =>
-      prev.map((tab) => (tab.path === path ? { ...tab, content, isModified: true } : tab))
+      prev.map((tab) => (pathsEqual(tab.path, path) ? { ...tab, content, isModified: true } : tab))
     );
   }, []);
 
-  const handleWysiwygChange = useCallback((markdown: string) => {
+  const handleWysiwygChange = useCallback((content: string) => {
     const path = activeTabPathRef.current;
     if (!path) return;
-    const current = tabsRef.current.find((t) => t.path === path);
+    const current = tabsRef.current.find((t) => pathsEqual(t.path, path));
     if (current?.isReadonly) {
       setStatusMessage('只读文件，无法编辑（大文件保护）');
       return;
     }
     setTabs((prev) =>
       prev.map((tab) => {
-        if (tab.path !== path) return tab;
-        const next = markdown.replace(/\r\n/g, '\n');
+        if (!pathsEqual(tab.path, path)) return tab;
+        const next = content.replace(/\r\n/g, '\n');
         const prevContent = tab.content.replace(/\r\n/g, '\n');
         if (next === prevContent) return tab;
-        return { ...tab, content: markdown, isModified: true };
+        return { ...tab, content, isModified: true };
       })
     );
   }, []);
@@ -720,14 +806,16 @@ const App: React.FC = () => {
     const path = activeTabPathRef.current;
     if (!path) return;
     setTabs((prev) =>
-      prev.map((tab) => (tab.path === path ? { ...tab, content, isModified: true } : tab))
+      prev.map((tab) => (pathsEqual(tab.path, path) ? { ...tab, content, isModified: true } : tab))
     );
     setStatusMessage('已恢复历史版本（未保存，可 Ctrl+S 写回文件）');
   }, []);
 
   const handlePasteImage = useCallback(
     async (file: File): Promise<string | null> => {
-      const tab = tabsRef.current.find((t) => t.path === activeTabPathRef.current);
+      const tab = tabsRef.current.find(
+        (t) => activeTabPathRef.current != null && pathsEqual(t.path, activeTabPathRef.current)
+      );
       if (!tab || tab.isBinary) return null;
       if (tab.isUntitled || tab.path.startsWith('untitled:')) {
         setStatusMessage('请先保存文档，再粘贴图片');
@@ -768,7 +856,9 @@ const App: React.FC = () => {
   const textStats = activeTab && !activeTab.isBinary ? computeTextStats(activeTab.content) : null;
 
   const handleReopenEncoding = useCallback(async (label: 'UTF-8' | 'GBK') => {
-    const tab = tabsRef.current.find((t) => t.path === activeTabPathRef.current);
+    const tab = tabsRef.current.find(
+      (t) => activeTabPathRef.current != null && pathsEqual(t.path, activeTabPathRef.current)
+    );
     if (!tab || tab.isBinary || tab.isUntitled || tab.path.startsWith('untitled:')) {
       setStatusMessage('当前文件不支持切换编码');
       return;
@@ -787,7 +877,7 @@ const App: React.FC = () => {
       });
       setTabs((prev) =>
         prev.map((t) =>
-          t.path === tab.path
+          pathsEqual(t.path, tab.path)
             ? {
                 ...t,
                 content: result.content,
@@ -806,7 +896,7 @@ const App: React.FC = () => {
   const applyContentEdit = useCallback((nextContent: string, selection?: { start: number; end: number }) => {
     const path = activeTabPathRef.current;
     if (!path) return;
-    const tab = tabsRef.current.find((t) => t.path === path);
+    const tab = tabsRef.current.find((t) => pathsEqual(t.path, path));
     if (!tab || tab.isBinary || tab.isReadonly) {
       setStatusMessage(tab?.isReadonly ? '只读文件不可编辑' : '当前文件不支持编辑');
       return;
@@ -819,7 +909,7 @@ const App: React.FC = () => {
     }
 
     setTabs((prev) =>
-      prev.map((t) => (t.path === path ? { ...t, content: nextContent, isModified: true } : t))
+      prev.map((t) => (pathsEqual(t.path, path) ? { ...t, content: nextContent, isModified: true } : t))
     );
   }, []);
 
@@ -829,7 +919,7 @@ const App: React.FC = () => {
       setStatusMessage('请先打开或新建文档');
       return;
     }
-    const tab = tabsRef.current.find((t) => t.path === path);
+    const tab = tabsRef.current.find((t) => pathsEqual(t.path, path));
     if (!tab || tab.isBinary) {
       setStatusMessage('当前文件不支持格式化');
       return;
@@ -867,7 +957,7 @@ const App: React.FC = () => {
       setStatusMessage('请先打开或新建文档');
       return;
     }
-    const tab = tabsRef.current.find((t) => t.path === path);
+    const tab = tabsRef.current.find((t) => pathsEqual(t.path, path));
     if (!tab || tab.isBinary) {
       setStatusMessage('当前文件不支持格式化');
       return;
@@ -925,7 +1015,7 @@ const App: React.FC = () => {
       setStatusMessage('请先打开或新建文档');
       return;
     }
-    const tab = tabsRef.current.find((t) => t.path === path);
+    const tab = tabsRef.current.find((t) => pathsEqual(t.path, path));
     if (!tab || tab.isBinary || tab.extension !== 'json') {
       setStatusMessage('仅 JSON 文件支持压缩');
       return;
@@ -952,7 +1042,9 @@ const App: React.FC = () => {
   }, [handleFormat]);
 
   const handleExportHtml = useCallback(async () => {
-    const tab = tabsRef.current.find((t) => t.path === activeTabPathRef.current);
+    const tab = tabsRef.current.find(
+      (t) => activeTabPathRef.current != null && pathsEqual(t.path, activeTabPathRef.current)
+    );
     if (!tab || tab.isBinary) {
       setStatusMessage('当前没有可导出的文本文件');
       return;
@@ -976,7 +1068,9 @@ const App: React.FC = () => {
   }, []);
 
   const handleExportPdf = useCallback(async () => {
-    const tab = tabsRef.current.find((t) => t.path === activeTabPathRef.current);
+    const tab = tabsRef.current.find(
+      (t) => activeTabPathRef.current != null && pathsEqual(t.path, activeTabPathRef.current)
+    );
     if (!tab || tab.isBinary) {
       setStatusMessage('当前没有可导出的文本文件');
       return;
@@ -1134,11 +1228,7 @@ const App: React.FC = () => {
     const unlistenPromise = listen<string[]>('second-instance-open', (event) => {
       const args = event.payload || [];
       for (const arg of args) {
-        if (!arg || isFlagArg(arg)) continue;
-        const lower = arg.toLowerCase();
-        if ((lower.endsWith('.exe') || lower.includes('anyedit')) && !lower.endsWith('.md') && !lower.endsWith('.txt') && !lower.endsWith('.pdf')) {
-          if (lower.includes('anyedit') || lower.endsWith('.exe')) continue;
-        }
+        if (!arg || isFlagArg(arg) || isAppExecutableArg(arg)) continue;
         void openFileRef.current(arg);
       }
     });
@@ -1209,11 +1299,42 @@ const App: React.FC = () => {
               if (!ok) return;
             }
           } else {
-            const proceed = await ask(
-              `有 ${dirty.length} 个文件未保存。关闭将丢失未保存的更改。\n是否仍要关闭？`,
-              { title: '未保存的更改', kind: 'warning' }
-            );
-            if (!proceed) return;
+            let multiDecision: 'save' | 'discard' | 'cancel' = 'cancel';
+            try {
+              const result = await message(
+                `有 ${dirty.length} 个文件未保存。\n是否在关闭前全部保存？`,
+                {
+                  title: '未保存的更改',
+                  kind: 'warning',
+                  buttons: {
+                    yes: '全部保存',
+                    no: '全部不保存',
+                    cancel: '取消',
+                  },
+                }
+              );
+              if (result === 'Yes' || result === '全部保存' || result === 'yes') multiDecision = 'save';
+              else if (result === 'No' || result === '全部不保存' || result === 'no') multiDecision = 'discard';
+              else multiDecision = 'cancel';
+            } catch {
+              try {
+                const saveAll = await ask(
+                  `有 ${dirty.length} 个文件未保存。\n选“是”全部保存，选“否”取消关闭。`,
+                  { title: '未保存的更改', kind: 'warning' }
+                );
+                multiDecision = saveAll ? 'save' : 'cancel';
+              } catch {
+                multiDecision = 'cancel';
+              }
+            }
+            if (multiDecision === 'cancel') return;
+            if (multiDecision === 'save') {
+              for (const tab of dirty) {
+                const latest = tabsRef.current.find((t) => pathsEqual(t.path, tab.path)) ?? tab;
+                const ok = await handleSave(latest);
+                if (!ok) return;
+              }
+            }
           }
 
           setTabs((prev) => prev.map((t) => ({ ...t, isModified: false })));
@@ -1346,6 +1467,7 @@ const App: React.FC = () => {
           <div className="sidebar-left">
             <FileTree
               rootPath={rootPath}
+              activeFilePath={activeTabPath}
               onFileOpen={(path) => {
                 void openFile(path);
               }}
@@ -1354,6 +1476,137 @@ const App: React.FC = () => {
               }}
               refreshKey={refreshKey}
               onTreeMutated={() => setRefreshKey((k) => k + 1)}
+              onBeforePathDelete={async (path) => {
+                const affected = tabsRef.current.filter(
+                  (t) =>
+                    !t.path.startsWith('untitled:') &&
+                    isPathUnder(t.path, path) &&
+                    t.isModified &&
+                    !t.isBinary
+                );
+                if (affected.length === 0) return true;
+
+                if (affected.length === 1) {
+                  const decision = await confirmDiscard(affected[0]);
+                  if (decision === 'cancel') {
+                    setStatusMessage('已取消删除（存在未保存更改）');
+                    return false;
+                  }
+                  if (decision === 'save') {
+                    const ok = await handleSave(affected[0]);
+                    if (!ok) {
+                      setStatusMessage('保存失败，已取消删除');
+                      return false;
+                    }
+                  }
+                  return true;
+                }
+
+                let multi: 'save' | 'discard' | 'cancel' = 'cancel';
+                try {
+                  const result = await message(
+                    `删除路径下有 ${affected.length} 个未保存文件。\n删除前如何处理？`,
+                    {
+                      title: '未保存的更改',
+                      kind: 'warning',
+                      buttons: {
+                        yes: '全部保存后删除',
+                        no: '不保存并删除',
+                        cancel: '取消',
+                      },
+                    }
+                  );
+                  if (result === 'Yes' || result === '全部保存后删除' || result === 'yes') multi = 'save';
+                  else if (result === 'No' || result === '不保存并删除' || result === 'no') multi = 'discard';
+                  else multi = 'cancel';
+                } catch {
+                  try {
+                    const saveAll = await ask(
+                      `删除路径下有 ${affected.length} 个未保存文件。\n选“是”全部保存后删除，选“否”取消删除。`,
+                      { title: '未保存的更改', kind: 'warning' }
+                    );
+                    multi = saveAll ? 'save' : 'cancel';
+                  } catch {
+                    multi = 'cancel';
+                  }
+                }
+                if (multi === 'cancel') {
+                  setStatusMessage('已取消删除（存在未保存更改）');
+                  return false;
+                }
+                if (multi === 'save') {
+                  for (const tab of affected) {
+                    const latest = tabsRef.current.find((t) => pathsEqual(t.path, tab.path)) ?? tab;
+                    const ok = await handleSave(latest);
+                    if (!ok) {
+                      setStatusMessage('保存失败，已取消删除');
+                      return false;
+                    }
+                  }
+                }
+                return true;
+              }}
+              onPathRenamed={(from, to) => {
+                setTabs((prev) =>
+                  prev.map((t) => {
+                    const nextPath = remapPath(t.path, from, to);
+                    if (!nextPath) return t;
+                    return {
+                      ...t,
+                      path: nextPath,
+                      name: getFileName(nextPath),
+                      extension: getExtension(nextPath) || t.extension,
+                    };
+                  })
+                );
+                if (activeTabPathRef.current) {
+                  const nextActive = remapPath(activeTabPathRef.current, from, to);
+                  if (nextActive) setActiveTabPath(nextActive);
+                }
+                // migrate mtime / dirty markers
+                const nextMtime: Record<string, number> = {};
+                for (const [k, v] of Object.entries(diskMtimeRef.current)) {
+                  const nk = remapPath(k, from, to) ?? k;
+                  nextMtime[normalizePath(nk)] = v;
+                }
+                diskMtimeRef.current = nextMtime;
+                setDiskChangedPaths((m) => {
+                  const next: Record<string, boolean> = {};
+                  for (const [k, v] of Object.entries(m)) {
+                    const nk = remapPath(k, from, to) ?? k;
+                    next[normalizePath(nk)] = v;
+                  }
+                  return next;
+                });
+                setRecentFiles((prev) =>
+                  prev.map((p) => remapPath(p, from, to) ?? p).filter((p, i, arr) => arr.indexOf(p) === i)
+                );
+                setStatusMessage(`已同步标签路径: ${getFileName(to)}`);
+              }}
+              onPathDeleted={(path) => {
+                setTabs((prev) => {
+                  const next = prev.filter((t) => t.path.startsWith('untitled:') || !isPathUnder(t.path, path));
+                  if (activeTabPathRef.current) {
+                    const stillOpen = next.some((t) => pathsEqual(t.path, activeTabPathRef.current!));
+                    if (!stillOpen) {
+                      setActiveTabPath(next.length ? next[next.length - 1].path : null);
+                    }
+                  }
+                  return next;
+                });
+                setDiskChangedPaths((m) => {
+                  const next: Record<string, boolean> = {};
+                  for (const [k, v] of Object.entries(m)) {
+                    if (isPathUnder(k, path)) continue;
+                    next[k] = v;
+                  }
+                  return next;
+                });
+                for (const key of Object.keys(diskMtimeRef.current)) {
+                  if (isPathUnder(key, path)) delete diskMtimeRef.current[key];
+                }
+                setStatusMessage(`已关闭已删除路径的标签: ${getFileName(path)}`);
+              }}
             />
           </div>
         )}
@@ -1447,14 +1700,17 @@ const App: React.FC = () => {
 
             {activeTab && !activeTab.isBinary && isCsv && csvTableMode && (
               <CsvTableView
+                key={activeTab.path}
                 content={activeTab.content}
                 extension={activeTab.extension}
                 onContentChange={handleContentChange}
+                readOnly={!!activeTab.isReadonly}
               />
             )}
 
             {activeTab && !activeTab.isBinary && !isMarkdown && !(isCsv && csvTableMode) && (
               <EditorPane
+                key={activeTab.path}
                 ref={editorPaneRef}
                 content={activeTab.content}
                 extension={activeTab.extension}
@@ -1478,11 +1734,13 @@ const App: React.FC = () => {
                 scrollToLine={scrollToLine}
                 onContentChange={handleWysiwygChange}
                 onPasteImage={handlePasteImage}
+                readOnly={!!activeTab.isReadonly}
               />
             )}
 
             {activeTab && isMarkdown && viewMode === 'code' && (
               <EditorPane
+                key={activeTab.path}
                 ref={editorPaneRef}
                 content={activeTab.content}
                 extension={activeTab.extension}
@@ -1510,6 +1768,7 @@ const App: React.FC = () => {
               <div className="split-view">
                 <div className="split-editor">
                   <EditorPane
+                    key={activeTab.path}
                     ref={editorPaneRef}
                     content={activeTab.content}
                     extension={activeTab.extension}
@@ -1591,7 +1850,7 @@ const App: React.FC = () => {
                   <span className="status-item">只读</span>
                 </>
               )}
-              {activeTab && diskChangedPaths[activeTab.path] && (
+              {activeTab && Object.keys(diskChangedPaths).some((k) => pathsEqual(k, activeTab.path)) && (
                 <>
                   <span className="status-separator">|</span>
                   <span className="status-item" title="磁盘文件已被外部修改">磁盘已变</span>
@@ -1625,8 +1884,25 @@ const App: React.FC = () => {
           const path = activeTabPathRef.current;
           if (!path) return;
           setTabs((prev) =>
-            prev.map((t) => (t.path === path ? { ...t, content, isModified: false } : t))
+            prev.map((t) => (pathsEqual(t.path, path) ? { ...t, content, isModified: false } : t))
           );
+          void (async () => {
+            try {
+              const meta = await invoke<{ modified_ms: number }>('file_meta', { path });
+              if (typeof meta.modified_ms === 'number') {
+                diskMtimeRef.current[normalizePath(path)] = meta.modified_ms;
+              }
+            } catch {
+              // ignore
+            }
+          })();
+          setDiskChangedPaths((m) => {
+            const next = { ...m };
+            for (const key of Object.keys(next)) {
+              if (pathsEqual(key, path)) delete next[key];
+            }
+            return next;
+          });
           setStatusMessage('已用磁盘版本覆盖编辑器内容');
         }}
       />

@@ -13,7 +13,6 @@
   overflow-y: auto;
   outline: none;
   cursor: text;
-  /* override shared padding slightly for editor chrome */
   padding: 40px 48px;
   box-sizing: border-box;
 }
@@ -37,4 +36,10 @@
 .wysiwyg-content.md-doc .md-mermaid-block,
 .wysiwyg-content.md-doc .md-math-block {
   user-select: text;
+}
+
+/* Read-only mode: hide caret, show default cursor over content */
+.wysiwyg-readonly .wysiwyg-content.md-doc {
+  caret-color: transparent;
+  cursor: default;
 }

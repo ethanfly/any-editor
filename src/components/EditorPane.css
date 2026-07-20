@@ -31,13 +31,14 @@
 .editor-context-menu {
   position: fixed;
   z-index: 81;
-  min-width: 12.5rem;
+  min-width: 11.5rem;
   width: max-content;
-  padding: 6px;
+  padding: var(--app-menu-pad, 5px);
   border: 1px solid var(--app-line);
-  border-radius: 12px;
+  border-radius: var(--app-menu-radius, 10px);
   background: var(--app-surface);
-  box-shadow: var(--app-shadow);
+  box-shadow: var(--app-shadow-menu, var(--app-shadow));
+  animation: app-panel-in 100ms var(--app-ease) both;
 }
 
 .editor-context-item {
@@ -45,18 +46,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  min-height: 34px;
-  padding: 7px 12px;
+  gap: 16px;
+  min-height: var(--app-menu-item-h, 32px);
+  padding: 6px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--app-menu-item-radius, 7px);
   background: transparent;
   color: var(--app-text);
   cursor: pointer;
-  font-size: 0.9231rem;
-  font-weight: 650;
+  font-size: 0.88rem;
+  font-weight: 600;
   text-align: left;
   white-space: nowrap;
+  transition: background 100ms var(--app-ease), color 100ms var(--app-ease);
 }
 
 .editor-context-item:hover:not(:disabled) {
@@ -65,16 +67,22 @@
 }
 
 .editor-context-item:disabled {
-  opacity: 0.4;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
 .editor-context-item kbd {
   color: var(--app-text-muted);
   font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 0.7692rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 560;
   white-space: nowrap;
+  opacity: 0.85;
+}
+
+.editor-context-item:hover:not(:disabled) kbd {
+  color: var(--app-orange-strong);
+  opacity: 0.7;
 }
 
 .editor-context-sep {

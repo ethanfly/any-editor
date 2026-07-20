@@ -5,6 +5,7 @@ interface CsvTableViewProps {
   content: string;
   extension: string;
   onContentChange: (content: string) => void;
+  readOnly?: boolean;
 }
 
 function parseCsv(text: string, delimiter: string): string[][] {
@@ -79,7 +80,12 @@ function serializeCsv(rows: string[][], delimiter: string): string {
     .join('\n');
 }
 
-const CsvTableView: React.FC<CsvTableViewProps> = ({ content, extension, onContentChange }) => {
+const CsvTableView: React.FC<CsvTableViewProps> = ({
+  content,
+  extension,
+  onContentChange,
+  readOnly = false,
+}) => {
   const delimiter = extension === 'tsv' ? '\t' : ',';
   const [rows, setRows] = useState<string[][]>(() => parseCsv(content, delimiter));
   const [sourceMode, setSourceMode] = useState(false);
@@ -126,16 +132,24 @@ const CsvTableView: React.FC<CsvTableViewProps> = ({ content, extension, onConte
     return (
       <div className="csv-view">
         <div className="csv-toolbar">
-          <button type="button" className="csv-btn active" onClick={() => setSourceMode(false)}>
+          <button
+            type="button"
+            className="csv-btn active"
+            onClick={() => setSourceMode(false)}
+            disabled={readOnly}
+          >
             表格视图
           </button>
-          <span className="csv-meta">{extension.toUpperCase()} · 源码模式</span>
+          <span className="csv-meta">
+            {extension.toUpperCase()} · 源码模式{readOnly ? ' · 只读' : ''}
+          </span>
         </div>
         <textarea
           className="csv-source"
           value={content}
           onChange={(e) => onContentChange(e.target.value)}
           spellCheck={false}
+          readOnly={readOnly}
         />
       </div>
     );
@@ -144,17 +158,23 @@ const CsvTableView: React.FC<CsvTableViewProps> = ({ content, extension, onConte
   return (
     <div className="csv-view">
       <div className="csv-toolbar">
-        <button type="button" className="csv-btn" onClick={addRow}>
+        <button type="button" className="csv-btn" onClick={addRow} disabled={readOnly}>
           + 行
         </button>
-        <button type="button" className="csv-btn" onClick={addCol}>
+        <button type="button" className="csv-btn" onClick={addCol} disabled={readOnly}>
           + 列
         </button>
-        <button type="button" className="csv-btn" onClick={() => setSourceMode(true)}>
+        <button
+          type="button"
+          className="csv-btn"
+          onClick={() => setSourceMode(true)}
+          disabled={readOnly}
+        >
           源码
         </button>
         <span className="csv-meta">
           {normalized.length} 行 · {colCount} 列 · {extension.toUpperCase()}
+          {readOnly ? ' · 只读' : ''}
         </span>
       </div>
       <div className="csv-scroll">
@@ -169,6 +189,7 @@ const CsvTableView: React.FC<CsvTableViewProps> = ({ content, extension, onConte
                       className="csv-cell"
                       value={cell}
                       onChange={(e) => updateCell(ri, ci, e.target.value)}
+                      readOnly={readOnly}
                     />
                   </td>
                 ))}

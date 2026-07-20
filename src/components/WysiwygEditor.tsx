@@ -21,6 +21,7 @@ interface WysiwygEditorProps {
   onContentChange: (markdown: string) => void;
   scrollToLine?: { line: number; token: number } | null;
   onPasteImage?: (file: File) => Promise<string | null>;
+  readOnly?: boolean;
 }
 
 /* ============================================================
@@ -1053,7 +1054,14 @@ function syncHeadingIds(editor: HTMLElement) {
  *  WYSIWYG EDITOR COMPONENT
  * ============================================================ */
 
-const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onContentChange, scrollToLine, onPasteImage }) => {
+const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
+  content,
+  filePath,
+  onContentChange,
+  scrollToLine,
+  onPasteImage,
+  readOnly = false,
+}) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isInternalChange, setIsInternalChange] = useState(false);
   const onChangeRef = useRef(onContentChange);
@@ -1150,6 +1158,8 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
       const editor = editorRef.current;
       if (!editor) return;
 
+      if (readOnly) return;
+
       const lineEl = getCurrentLineElement(editor);
       if (!lineEl) return;
 
@@ -1188,13 +1198,36 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
 
       updateContent();
     },
-    [updateContent]
+    [updateContent, readOnly]
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const editor = editorRef.current;
       if (!editor) return;
+
+      // In read-only mode, only navigation and copy/clipboard shortcuts are allowed.
+      if (readOnly) {
+        const key = e.key;
+        const isNavigation =
+          key === 'ArrowLeft' ||
+          key === 'ArrowRight' ||
+          key === 'ArrowUp' ||
+          key === 'ArrowDown' ||
+          key === 'Home' ||
+          key === 'End' ||
+          key === 'PageUp' ||
+          key === 'PageDown' ||
+          key === 'Escape';
+        const isClipboard =
+          (e.ctrlKey || e.metaKey) && (key === 'c' || key === 'a' || key === 'Copy');
+        if (isNavigation || isClipboard) {
+          return;
+        }
+        // Block everything else (typing, Enter, Tab, Backspace, paste shortcut, etc.)
+        e.preventDefault();
+        return;
+      }
 
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) return;
@@ -1288,11 +1321,12 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
         return;
       }
     },
-    [updateContent]
+    [updateContent, readOnly]
   );
 
   const handlePaste = useCallback(
     async (e: React.ClipboardEvent) => {
+      if (readOnly) return;
       if (!onPasteImage) return;
       const items = e.clipboardData?.items;
       if (!items) return;
@@ -1310,15 +1344,15 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({ content, filePath, onCont
         return;
       }
     },
-    [onPasteImage, updateContent]
+    [onPasteImage, updateContent, readOnly]
   );
 
   return (
-    <div className="wysiwyg-editor">
+    <div className={`wysiwyg-editor${readOnly ? ' wysiwyg-readonly' : ''}`}>
       <div
         ref={editorRef}
         className="wysiwyg-content md-doc"
-        contentEditable
+        contentEditable={readOnly ? 'false' : 'true'}
         suppressContentEditableWarning
         onInput={handleInput}
         onKeyDown={handleKeyDown}
