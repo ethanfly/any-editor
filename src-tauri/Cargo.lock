@@ -71,7 +71,7 @@ dependencies = [
 
 [[package]]
 name = "any-editor"
-version = "0.1.40"
+version = "0.1.41"
 dependencies = [
  "encoding_rs",
  "log",

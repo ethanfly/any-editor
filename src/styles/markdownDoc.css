@@ -1,9 +1,11 @@
 /**
  * Shared document look for:
  * - Preview / Split right pane (.markdown-body.md-doc)
- * - WYSIWYG (.wysiwyg-content.md-doc)
+ * - WYSIWYG Milkdown ProseMirror (.ProseMirror.md-doc)
+ * - Legacy contentEditable (.wysiwyg-content.md-doc)
  *
  * Goal: same typography, spacing, code, tables, mermaid, math across modes.
+ * This is the Any Editor "document theme" — single source of truth.
  */
 
 /* ===== Base page ===== */
@@ -493,4 +495,324 @@
 .app[data-theme='dark'] .md-doc :not(pre) > code,
 .app[data-theme='dark'] .md-doc .md-code {
   color: #ff8f70;
+}
+
+/* ============================================================
+ * Milkdown / Crepe structural hooks (still under .md-doc)
+ * Keep visual parity with preview while respecting node-view DOM.
+ * ============================================================ */
+
+/* Fenced code (CodeMirror + oneDark) — same slate surface as pre.md-code-block */
+.md-doc .milkdown-code-block {
+  margin: 20px 0;
+  padding: 8px 12px 0;
+  /* MUST be visible so language dropdown is not clipped inside the block */
+  overflow: visible !important;
+  background: #1e293b !important;
+  border-radius: 12px;
+  line-height: 1.65;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  position: relative;
+  z-index: 1;
+}
+
+/* When language menu is open, lift above neighbouring blocks */
+.md-doc .milkdown-code-block:has(.language-button[data-expanded='true']),
+.md-doc .milkdown-code-block:has(.list-wrapper:not(.hidden)),
+.md-doc .milkdown-code-block:has(.language-picker:not(.hidden)) {
+  z-index: 40;
+}
+
+.md-doc .milkdown-code-block .cm-editor {
+  overflow: auto;
+  border-radius: 0 0 10px 10px;
+}
+
+.md-doc .milkdown-code-block .cm-editor,
+.md-doc .milkdown-code-block .cm-scroller,
+.md-doc .milkdown-code-block .cm-content,
+.md-doc .milkdown-code-block .cm-gutters {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  font-family: 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  border: none !important;
+}
+
+.md-doc .milkdown-code-block .cm-content {
+  padding: 12px 12px 18px !important;
+  caret-color: #ffb46b !important;
+}
+
+/* Fallback when token styles lag: keep base text light */
+.md-doc .milkdown-code-block .cm-line {
+  color: #e2e8f0;
+}
+
+.md-doc .milkdown-code-block .cm-gutters {
+  color: rgba(226, 232, 240, 0.38) !important;
+}
+
+.md-doc .milkdown-code-block .cm-activeLine,
+.md-doc .milkdown-code-block .cm-activeLineGutter {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Toolbar row */
+.md-doc .milkdown-code-block .tools {
+  position: relative;
+  z-index: 2;
+  padding: 0 4px 4px;
+  gap: 8px;
+}
+
+/* Language select — always visible, high contrast on slate */
+.md-doc .milkdown-code-block .tools .language-button,
+.md-doc .milkdown-code-block .language-button {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px !important;
+  margin-bottom: 6px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #f8fafc !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  line-height: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.md-doc .milkdown-code-block .language-button svg,
+.md-doc .milkdown-code-block .language-button .expand-icon svg {
+  color: #f8fafc !important;
+  fill: #f8fafc !important;
+  opacity: 0.9;
+}
+
+.md-doc .milkdown-code-block .language-button:hover,
+.md-doc .milkdown-code-block .language-button[data-expanded='true'] {
+  color: #fff !important;
+  background: rgba(241, 149, 63, 0.35) !important;
+  border-color: rgba(241, 149, 63, 0.65) !important;
+}
+
+/* Copy / preview buttons */
+.md-doc .milkdown-code-block .tools .tools-button-group button,
+.md-doc .milkdown-code-block .copy-button {
+  opacity: 1 !important;
+  visibility: visible !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 8px !important;
+  padding: 5px 10px !important;
+}
+
+.md-doc .milkdown-code-block .tools .tools-button-group button svg,
+.md-doc .milkdown-code-block .copy-button svg {
+  fill: #f1f5f9 !important;
+  color: #f1f5f9 !important;
+}
+
+.md-doc .milkdown-code-block .language-button:hover,
+.md-doc .milkdown-code-block .copy-button:hover,
+.md-doc .milkdown-code-block .tools-button-group button:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Language dropdown — float above the block, not clipped */
+.md-doc .milkdown-code-block .language-picker {
+  position: absolute !important;
+  z-index: 50 !important;
+  left: 12px;
+  top: 36px;
+  width: max-content;
+  max-width: min(280px, 90vw);
+  pointer-events: auto;
+}
+
+.md-doc .milkdown-code-block .list-wrapper,
+.md-doc .milkdown-code-block .language-list {
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 10px !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.md-doc .milkdown-code-block .list-wrapper {
+  width: 240px !important;
+  max-height: min(360px, 50vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px !important;
+}
+
+.md-doc .milkdown-code-block .language-list {
+  height: auto !important;
+  max-height: min(320px, 46vh) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 0 0 8px !important;
+}
+
+.md-doc .milkdown-code-block .language-list-item {
+  color: #e2e8f0 !important;
+  padding: 6px 14px !important;
+  border-radius: 0;
+}
+
+.md-doc .milkdown-code-block .language-list-item:hover,
+.md-doc .milkdown-code-block .language-list-item[data-hovered='true'],
+.md-doc .milkdown-code-block .language-list-item.hover {
+  background: rgba(241, 149, 63, 0.22) !important;
+  color: #fff !important;
+}
+
+.md-doc .milkdown-code-block .language-list-item[data-checked='true'],
+.md-doc .milkdown-code-block .language-list-item.selected {
+  background: rgba(241, 149, 63, 0.28) !important;
+  color: #fff !important;
+}
+
+/* Search input inside language picker */
+.md-doc .milkdown-code-block .list-wrapper input,
+.md-doc .milkdown-code-block .language-picker input {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 6px !important;
+  caret-color: #ffb46b !important;
+}
+
+.md-doc .milkdown-code-block .list-wrapper input::placeholder {
+  color: rgba(226, 232, 240, 0.5) !important;
+}
+
+.md-doc .milkdown-code-block.selected {
+  outline: 2px solid rgba(241, 149, 63, 0.55);
+  outline-offset: 1px;
+}
+
+/* Code selection on dark surface */
+.md-doc .milkdown-code-block .cm-selectionBackground,
+.md-doc .milkdown-code-block .cm-editor.cm-focused .cm-selectionBackground,
+.md-doc .milkdown-code-block .cm-editor ::selection {
+  background: rgba(255, 180, 107, 0.32) !important;
+}
+
+/* Headings must remain normal textblocks (editable, selectable) */
+.md-doc h1,
+.md-doc h2,
+.md-doc h3,
+.md-doc h4,
+.md-doc h5,
+.md-doc h6 {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+
+/* Tables (Crepe table block) */
+.md-doc .milkdown-table-block {
+  margin: 20px 0;
+}
+
+.md-doc .milkdown-table-block .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--app-radius-xs, 8px);
+}
+
+.md-doc .milkdown-table-block table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.md-doc .milkdown-table-block th,
+.md-doc .milkdown-table-block td {
+  border: 1px solid var(--app-line);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--app-text);
+  background: var(--app-surface);
+  word-break: break-word;
+}
+
+.md-doc .milkdown-table-block th {
+  background: var(--app-surface-muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.md-doc .milkdown-table-block tr:nth-child(even) td {
+  background: var(--app-surface-soft);
+}
+
+/* List marker labels from Crepe node views */
+.md-doc .list-item_label,
+.md-doc .label {
+  color: var(--app-text-soft);
+}
+
+/* Mermaid live preview panel inside code block */
+.md-doc .milkdown-code-block .preview,
+.md-doc .milkdown-code-block .preview-panel {
+  background: var(--app-surface-soft);
+  border-top: 1px solid var(--app-line);
+  color: var(--app-text);
+  border-radius: 0 0 12px 12px;
+}
+
+.md-doc .milkdown-code-block .preview svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Image blocks */
+.md-doc .milkdown-image-block,
+.md-doc .milkdown-image-inline {
+  margin: 16px 0;
+}
+
+.md-doc .milkdown-image-block img,
+.md-doc .milkdown-image-inline img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+/* Block math */
+.md-doc [data-type='math_inline'] .katex,
+.md-doc .katex {
+  font-size: 1.05em;
+  color: inherit;
+}
+
+.md-doc .katex-display {
+  margin: 14px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Placeholder (empty doc) */
+.md-doc.ProseMirror .crepe-placeholder::before,
+.editor-host .crepe-placeholder::before {
+  color: var(--app-text-muted);
+  font-style: normal;
+  opacity: 0.85;
 }

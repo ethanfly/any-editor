@@ -12,6 +12,7 @@ import EditorPane from './components/EditorPane';
 import type { EditorPaneHandle } from './components/EditorPane';
 import MarkdownPreview from './components/MarkdownPreview';
 import WysiwygEditor from './components/WysiwygEditor';
+import type { WysiwygEditorApi } from './components/WysiwygEditor';
 import PDFPreview from './components/PDFPreview';
 import ImagePreview from './components/ImagePreview';
 import Outline from './components/Outline';
@@ -125,6 +126,9 @@ const App: React.FC = () => {
   const openFileRef = useRef<(filePath: string) => Promise<void>>(async () => undefined);
   const untitledCounter = useRef(1);
   const editorPaneRef = useRef<EditorPaneHandle | null>(null);
+  const wysiwygApiRef = useRef<WysiwygEditorApi | null>(null);
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diskMtimeRef = useRef<Record<string, number>>({});
   const diskChangedPathsRef = useRef<Record<string, boolean>>({});
@@ -935,12 +939,6 @@ const App: React.FC = () => {
       return;
     }
 
-    let sel = { start: tab.content.length, end: tab.content.length };
-    const paneSel = editorPaneRef.current?.getSelectionOffsets();
-    if (paneSel) sel = paneSel;
-
-    const result = applyMarkdownFormat(tab.content, sel, action);
-    applyContentEdit(result.content, result.selection);
     const labels: Record<string, string> = {
       bold: '加粗', italic: '斜体', strike: '删除线', code: '行内代码', highlight: '高亮',
       h1: '标题1', h2: '标题2', h3: '标题3', quote: '引用', ul: '无序列表', ol: '有序列表',
@@ -948,6 +946,45 @@ const App: React.FC = () => {
       flowchart: '流程图', sequence: '时序图', math: '公式块', mathInline: '行内公式',
       sup: '上标', sub: '下标', formatDoc: '文档',
     };
+
+    // WYSIWYG: drive Crepe API so titles/marks apply at the live caret
+    // (source-offset formatting would rewrite the whole doc and drop the cursor).
+    const rich = wysiwygApiRef.current;
+    if (isMd && viewModeRef.current === 'wysiwyg' && rich) {
+      const blockMap: Partial<Record<FormatAction, string>> = {
+        h1: 'h1',
+        h2: 'h2',
+        h3: 'h3',
+      };
+      const markMap: Partial<Record<FormatAction, string>> = {
+        bold: 'bold',
+        italic: 'italic',
+        strike: 'strike',
+        code: 'code',
+        highlight: 'highlight',
+        link: 'link',
+      };
+      if (blockMap[action] && rich.setBlock) {
+        rich.setBlock(blockMap[action]!);
+        setStatusMessage(`已应用格式: ${labels[action] || action}`);
+        return;
+      }
+      if (markMap[action] && rich.applyTextFormat) {
+        const ok = rich.applyTextFormat(markMap[action]!);
+        if (ok) {
+          setStatusMessage(`已应用格式: ${labels[action] || action}`);
+          return;
+        }
+      }
+      // Remaining inserts (table / codeblock / …) still go through markdown source path.
+    }
+
+    let sel = { start: tab.content.length, end: tab.content.length };
+    const paneSel = editorPaneRef.current?.getSelectionOffsets();
+    if (paneSel) sel = paneSel;
+
+    const result = applyMarkdownFormat(tab.content, sel, action);
+    applyContentEdit(result.content, result.selection);
     setStatusMessage(`已应用格式: ${labels[action] || action}`);
   }, [applyContentEdit]);
 
@@ -1697,6 +1734,10 @@ const App: React.FC = () => {
                 onContentChange={handleWysiwygChange}
                 onPasteImage={handlePasteImage}
                 readOnly={!!activeTab.isReadonly}
+                fontSize={settings.fontSize}
+                onApiReady={(api) => {
+                  wysiwygApiRef.current = api;
+                }}
               />
             )}
 

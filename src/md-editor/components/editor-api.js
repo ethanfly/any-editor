@@ -1,0 +1,358 @@
+import { TextSelection, NodeSelection } from '@milkdown/prose/state'
+import { commandsCtx, remarkCtx } from '@milkdown/kit/core'
+import { toggleMark } from '@milkdown/prose/commands'
+import { replaceAll } from '@milkdown/utils'
+import katex from 'katex'
+import { applyReviewMarkupInView } from './editor-review.js'
+import { normalizeReviewMarkupMarkdown } from '../reviewMarkup.js'
+import { normalizeDisplayMath } from './editor-math.js'
+import { markdownOffsetToPmPos, pmPosToMarkdownOffset } from './editor-source-map.js'
+import { applyHighlightInView, toggleHighlightCommand } from './editor-highlight.js'
+import { codeMirrorSelectionInfo } from './editor-codemirror-selection.js'
+import {
+  emphasisSchema,
+  inlineCodeSchema,
+  strongSchema
+} from '@milkdown/kit/preset/commonmark'
+import { strikethroughSchema } from '@milkdown/kit/preset/gfm'
+import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip'
+
+const stripEditorOnlyForExport = (clone) => {
+  clone
+    .querySelectorAll(
+      'button, select, .language-picker, .language-list, .tools, ' +
+        '.tools-button-group, .button-group, .cm-panel, .cm-tooltip, ' +
+        '.preview-panel, .cell-handle, .line-handle, .handle, .add-button, ' +
+        '.operation, .operation-item, .drag-preview, .milkdown-block-handle, ' +
+        '.milkdown-toolbar, .image-resize-handle, .label-wrapper, .hm-frontmatter-wrap, ' +
+        '.hm-review-widget, .hm-review-card'
+    )
+    .forEach((el) => el.remove())
+}
+
+const cleanMathForExport = (math, { display } = {}) => {
+  const copy = math.cloneNode(true)
+  copy.querySelectorAll('annotation').forEach((node) => node.remove())
+  ;[...copy.childNodes].forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) node.remove()
+  })
+  if (display) copy.setAttribute('display', 'block')
+  return copy
+}
+
+const mathmlFromLatex = (doc, latex, { display } = {}) => {
+  if (!latex) return null
+  try {
+    const tpl = doc.createElement('template')
+    tpl.innerHTML = katex.renderToString(latex, {
+      throwOnError: false,
+      displayMode: !!display,
+      output: 'mathml'
+    })
+    const math = tpl.content.querySelector('math')
+    return math ? cleanMathForExport(math, { display }) : null
+  } catch {
+    return null
+  }
+}
+
+const codeBlockText = (block) => {
+  const lines = [...block.querySelectorAll('.cm-line')].map((line) => line.textContent)
+  if (lines.length) return lines.join('\n').replace(/\n+$/, '')
+  return (block.textContent || '').replace(/^\s*LaTeX\s*/, '').replace(/\s*复制\s*/, '').trim()
+}
+
+const isLatexCodeBlock = (block) => {
+  const codeMirrorLanguage = block.querySelector('.cm-content')?.dataset?.language?.trim().toLowerCase() || ''
+  const pickerLanguage = block.querySelector('.language-button')?.textContent?.trim().toLowerCase() || ''
+  // Crepe labels this language "LaTeX" in its picker but CodeMirror exposes
+  // the underlying `stex` mode. Accept both representations.
+  return ['latex', 'tex', 'stex'].includes(codeMirrorLanguage) || pickerLanguage.startsWith('latex')
+}
+
+const replaceKatexWithMathml = (root) => {
+  const doc = root.ownerDocument
+  root.querySelectorAll('.katex-display').forEach((display) => {
+    const math = display.querySelector('math')
+    if (math) display.replaceWith(cleanMathForExport(math, { display: true }))
+  })
+  root.querySelectorAll('.katex').forEach((katex) => {
+    const math = katex.querySelector('math')
+    if (math) {
+      katex.replaceWith(cleanMathForExport(math))
+      return
+    }
+    const inline = katex.closest("span[data-type='math_inline']")
+    const fallback = mathmlFromLatex(doc, inline?.dataset?.value || '', { display: false })
+    if (fallback) katex.replaceWith(fallback)
+  })
+}
+
+const materializeLatexPreviewsForExport = (clone) => {
+  const doc = clone.ownerDocument
+  clone.querySelectorAll('.milkdown-code-block').forEach((block) => {
+    // CodeMirror backs every fenced block. Only blocks explicitly marked as
+    // LaTeX can become MathML; trying KaTeX as a fallback for C++/JS/etc. turns
+    // ordinary code that happens to resemble math into a formula (#91).
+    if (!isLatexCodeBlock(block)) return
+    const math = block.querySelector('.preview-panel math') ||
+      mathmlFromLatex(doc, codeBlockText(block), { display: true })
+    if (!math) return
+    const wrapper = doc.createElement('figure')
+    wrapper.appendChild(math.tagName?.toLowerCase() === 'math' ? cleanMathForExport(math, { display: true }) : math)
+    block.replaceWith(wrapper)
+  })
+}
+
+const flattenCodeMirrorBlocks = (clone) => {
+  const doc = clone.ownerDocument
+  clone.querySelectorAll('.cm-editor').forEach((cm) => {
+    const lines = [...cm.querySelectorAll('.cm-line')].map((l) => l.textContent)
+    const pre = doc.createElement('pre')
+    const code = doc.createElement('code')
+    code.textContent = (lines.length ? lines.join('\n') : cm.textContent).replace(/\n+$/, '')
+    pre.appendChild(code)
+    cm.replaceWith(pre)
+  })
+}
+
+const stripEditorAttributes = (clone) => {
+  clone.querySelectorAll('*').forEach((el) => {
+    el.removeAttribute('class')
+    el.removeAttribute('style')
+    el.removeAttribute('contenteditable')
+    ;[...el.attributes].forEach((a) => {
+      if (a.name.startsWith('data-') || a.name.startsWith('aria-')) el.removeAttribute(a.name)
+    })
+  })
+}
+
+export function createEditorApi({
+  viewRef,
+  crepe,
+  crepeRef,
+  lastMarkdownRef,
+  canonicalMarkdownRef,
+  setBlock,
+  markUserEdit,
+  onStructureChange,
+  isDestroyed,
+  getT,
+  notify
+}) {
+  const getPdfSource = () => {
+    const v = viewRef.current
+    if (!v) return null
+    const clone = v.dom.cloneNode(true)
+    materializeLatexPreviewsForExport(clone)
+    stripEditorOnlyForExport(clone)
+    flattenCodeMirrorBlocks(clone)
+    replaceKatexWithMathml(clone)
+    stripEditorAttributes(clone)
+    const headings = [...clone.querySelectorAll('h1, h2, h3, h4, h5, h6')].map((heading, index) => {
+      const id = `hm-pdf-heading-${index + 1}`
+      heading.id = id
+      return {
+        id,
+        level: Number(heading.tagName.slice(1)),
+        text: heading.textContent?.trim() || ''
+      }
+    })
+    return { html: clone.innerHTML, headings }
+  }
+
+  const getMarkdown = () => {
+    try {
+      return crepe.getMarkdown()
+    } catch {
+      return ''
+    }
+  }
+
+  const toggleHighlight = () => {
+    try {
+      crepe.editor.ctx.get(commandsCtx).call(toggleHighlightCommand.key)
+    } catch {
+      /* editor tearing down */
+    }
+  }
+
+  const restoreTextSelection = (selectionRange = null) => {
+    const view = viewRef.current
+    if (!view) return false
+    try {
+      if (Number.isFinite(selectionRange?.anchor) && Number.isFinite(selectionRange?.head)) {
+        const { content } = view.state.doc
+        const anchor = Math.max(0, Math.min(selectionRange.anchor, content.size))
+        const head = Math.max(0, Math.min(selectionRange.head, content.size))
+        view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, anchor, head)))
+      }
+      return !view.state.selection.empty
+    } catch {
+      return false
+    }
+  }
+
+  // This is the shared command path for the selection toolbar and the
+  // right-click fallback. The latter is enabled only when the user hides the
+  // floating toolbar, so no parallel formatting implementation can drift.
+  const applyTextFormat = (format, selectionRange = null) => {
+    const view = viewRef.current
+    if (!view || !restoreTextSelection(selectionRange)) return false
+    try {
+      // The fallback is opened from a native-like contextmenu event, which does
+      // not reliably retain ProseMirror focus on every platform. Restore it
+      // before dispatching a Milkdown command so the command sees the selected
+      // range instead of a stale DOM selection.
+      view.focus()
+      markUserEdit?.()
+      if (format === 'highlight') {
+        applyHighlightInView(view, 'yellow')
+        return true
+      }
+      const mark = {
+        bold: strongSchema,
+        italic: emphasisSchema,
+        strike: strikethroughSchema,
+        code: inlineCodeSchema
+      }[format]
+      if (mark) {
+        // Execute mark changes against the active ProseMirror view directly.
+        // The same commands back Crepe's toolbar, but its command registry can
+        // see a stale focus owner immediately after a context-menu event.
+        return toggleMark(mark.type(crepe.editor.ctx))(view.state, (tr) => view.dispatch(tr), view)
+      }
+      if (format !== 'link') return false
+      crepe.editor.ctx.get(commandsCtx).call(toggleLinkCommand.key)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const applyReviewMarkup = (kind, selectionRange = null) => {
+    const view = viewRef.current
+    if (!view || !restoreTextSelection(selectionRange)) return false
+    view.focus()
+    const result = applyReviewMarkupInView(view, kind)
+    if (!result.ok && result.reason === 'multiline') {
+      notify?.(getT('review.inlineOnly'))
+    }
+    if (result.ok) markUserEdit?.()
+    return result.ok
+  }
+
+  const replaceMarkdown = (md) => {
+    if (isDestroyed?.() || !crepeRef.current) return false
+    try {
+      const source = md || ''
+      const next = normalizeReviewMarkupMarkdown(normalizeDisplayMath(source))
+      lastMarkdownRef.current = source
+      crepe.editor.action(replaceAll(next))
+      canonicalMarkdownRef.current = normalizeReviewMarkupMarkdown(crepe.getMarkdown())
+      onStructureChange?.()
+      return true
+    } catch (err) {
+      console.error('Replace markdown failed', err)
+      return false
+    }
+  }
+
+  const restoreMarkdownOffset = (rawOffset, follow = false) => {
+    const v = viewRef.current
+    if (!v || !crepeRef.current) return false
+    try {
+      const remark = crepe.editor.ctx.get(remarkCtx)
+      const target = markdownOffsetToPmPos(lastMarkdownRef.current || '', rawOffset, v.state.doc, remark)
+      const pos = typeof target === 'number' ? target : target?.pos
+      if (!Number.isFinite(pos)) return false
+      const size = v.state.doc.content.size
+      const safePos = Math.max(1, Math.min(pos, size))
+      const $pos = v.state.doc.resolve(safePos)
+      const inCodeBlock = /code/i.test($pos.parent.type.name)
+      let selection
+      if (target?.atom) {
+        try {
+          selection = NodeSelection.create(v.state.doc, Math.max(0, Math.min(pos, size - 1)))
+        } catch {
+          selection = TextSelection.near($pos, 1)
+        }
+      } else {
+        selection = TextSelection.near($pos)
+      }
+      const tr = v.state.tr.setSelection(selection)
+      if (follow) tr.scrollIntoView()
+      // A CodeMirror node view only forwards ProseMirror's selection while the
+      // outer editor owns focus. Focusing after dispatch would steal focus back
+      // and leave the inner caret outside the visible scroller.
+      if (follow && inCodeBlock) v.focus()
+      v.dispatch(tr)
+      if (follow && inCodeBlock) {
+        try {
+          const scroller = v.dom.closest('.editor-scroll')
+          const sr = scroller?.getBoundingClientRect()
+          const domSelection = v.dom.ownerDocument.getSelection()
+          const domRange = domSelection?.rangeCount ? domSelection.getRangeAt(0) : null
+          const coords = domRange?.getBoundingClientRect()
+          if (scroller && sr && coords && (coords.top < sr.top + 12 || coords.bottom > sr.bottom - 12)) {
+            scroller.scrollTop += (coords.top + coords.bottom) / 2 - (sr.top + sr.bottom) / 2
+          }
+        } catch {
+          // The repeated layout restore in App retries after CodeMirror paints.
+        }
+      } else if (follow) {
+        v.focus()
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const markdownOffsetFromSelection = () => {
+    const v = viewRef.current
+    if (!v || !crepeRef.current) return null
+    try {
+      let head = v.state.selection.head
+      const sel = v.dom.ownerDocument.getSelection()
+      if (sel && sel.rangeCount && sel.isCollapsed && v.dom.contains(sel.anchorNode)) {
+        head = codeMirrorSelectionInfo(v, sel)?.pmPos ?? v.posAtDOM(sel.anchorNode, sel.anchorOffset)
+      }
+      const remark = crepe.editor.ctx.get(remarkCtx)
+      return pmPosToMarkdownOffset(lastMarkdownRef.current || '', head, v.state.doc, remark)
+    } catch {
+      return null
+    }
+  }
+
+  const markdownOffsetFromViewportTop = () => {
+    const v = viewRef.current
+    if (!v || !crepeRef.current) return null
+    try {
+      const scroller = v.dom.closest('.editor-scroll')
+      if (!scroller) return null
+      const rect = scroller.getBoundingClientRect()
+      const doc = v.dom.ownerDocument
+      const point = doc.caretPositionFromPoint?.(rect.left + rect.width / 2, rect.top + 8)
+      if (!point || !v.dom.contains(point.offsetNode)) return null
+      const pos = v.posAtDOM(point.offsetNode, point.offset)
+      const remark = crepe.editor.ctx.get(remarkCtx)
+      return pmPosToMarkdownOffset(lastMarkdownRef.current || '', pos, v.state.doc, remark)
+    } catch {
+      return null
+    }
+  }
+
+  return {
+    setBlock,
+    getPdfSource,
+    getMarkdown,
+    toggleHighlight,
+    applyTextFormat,
+    applyReviewMarkup,
+    replaceMarkdown,
+    restoreMarkdownOffset,
+    markdownOffsetFromSelection,
+    markdownOffsetFromViewportTop
+  }
+}

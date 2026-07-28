@@ -1,45 +1,21 @@
-/* Shell + contentEditable-only rules.
- * Shared document look: styles/markdownDoc.css (.md-doc)
- */
+/* Layout shell only — document theme: markdownDoc.css; chrome: theme-bridge.css */
 
-.wysiwyg-editor {
+.wysiwyg-editor.wysiwyg-crepe {
   height: 100%;
   overflow: hidden;
-  background: var(--app-surface);
+  position: relative;
 }
 
-.wysiwyg-content.md-doc {
+.wysiwyg-crepe .editor-scroll {
   height: 100%;
   overflow-y: auto;
-  outline: none;
-  cursor: text;
-  padding: 40px 48px;
-  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-.wysiwyg-content.md-doc:focus {
-  outline: none;
+.wysiwyg-crepe .block-ctxmenu {
+  z-index: 10050;
 }
 
-/* Editable line minimum height (preview paragraphs don't need this) */
-.wysiwyg-content.md-doc .md-line {
-  min-height: 1.6em;
-}
-
-/* contentEditable caret targets for empty paragraphs */
-.wysiwyg-content.md-doc .md-line[data-type='p']:empty::before,
-.wysiwyg-content.md-doc .md-line[data-type='p'] > br:only-child {
-  content: '';
-}
-
-/* Prevent editing mermaid/math chrome */
-.wysiwyg-content.md-doc .md-mermaid-block,
-.wysiwyg-content.md-doc .md-math-block {
-  user-select: text;
-}
-
-/* Read-only mode: hide caret, show default cursor over content */
-.wysiwyg-readonly .wysiwyg-content.md-doc {
-  caret-color: transparent;
-  cursor: default;
+.wysiwyg-crepe .hm-image-lightbox {
+  z-index: 10060;
 }
